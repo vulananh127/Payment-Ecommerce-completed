@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giỏ hàng - ShopVN</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; color:#111; }
+    nav { background:#fff; border-bottom:1px solid #eee; padding:0 2rem; display:flex; align-items:center; gap:1rem; height:60px; }
+    .logo { font-size:1.4rem; font-weight:700; color:#111; text-decoration:none; margin-right:auto; }
+    .logo span { color:#e53935; }
+    .nav-btn { text-decoration:none; color:#111; font-size:0.875rem; padding:0.4rem 0.8rem; border-radius:6px; border:1px solid #ddd; }
+    .nav-btn:hover { background:#f5f5f5; }
+    .main { max-width:1100px; margin:2rem auto; padding:0 2rem; display:grid; grid-template-columns:1fr 340px; gap:1.5rem; }
+    .card { background:#fff; border-radius:12px; border:1px solid #eee; padding:1.5rem; }
+    h2 { font-size:1.2rem; font-weight:600; margin-bottom:1.5rem; }
+    .cart-item { display:flex; align-items:center; gap:1rem; padding:1rem 0; border-bottom:1px solid #f0f0f0; }
+    .cart-item:last-child { border-bottom:none; }
+    .item-img { width:80px; height:80px; border-radius:8px; object-fit:cover; background:#f0f0f0; flex-shrink:0; }
+    .item-info { flex:1; }
+    .item-name { font-weight:500; font-size:0.95rem; margin-bottom:0.25rem; }
+    .item-price { color:#e53935; font-weight:600; }
+    .qty-controls { display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; }
+    .qty-btn { width:28px; height:28px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:1rem; }
+    .qty-num { min-width:32px; text-align:center; font-size:0.9rem; }
+    .remove-btn { background:none; border:none; color:#aaa; cursor:pointer; font-size:0.85rem; padding:0.25rem 0.5rem; border-radius:4px; }
+    .remove-btn:hover { color:#e53935; background:#fff3f3; }
+    .summary-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.5rem 0; color:#555; }
+    .summary-row.total { font-weight:700; font-size:1.05rem; color:#111; border-top:1px solid #eee; margin-top:0.5rem; padding-top:1rem; }
+    .checkout-btn { width:100%; padding:0.9rem; background:#111; color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:1rem; }
+    .checkout-btn:hover { background:#333; }
+    .continue-btn { width:100%; padding:0.7rem; background:#fff; color:#111; border:1px solid #ddd; border-radius:8px; font-size:0.9rem; cursor:pointer; margin-top:0.75rem; }
+    .continue-btn:hover { background:#f5f5f5; }
+    .empty { text-align:center; padding:3rem; color:#888; }
+    .voucher-row { display:flex; gap:0.5rem; margin:1rem 0; }
+    .voucher-input { flex:1; padding:0.6rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.875rem; outline:none; }
+    .apply-btn { padding:0.6rem 1rem; background:#111; color:#fff; border:none; border-radius:6px; font-size:0.875rem; cursor:pointer; }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">Shop<span>VN</span></a>
+  <a href="/" class="nav-btn">← Tiếp tục mua sắm</a>
+</nav>
+
+<div class="main">
+  <div class="card">
+    <h2>Giỏ hàng (<span id="itemCount">0</span> sản phẩm)</h2>
+    <div id="cartItems"></div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>Tóm tắt đơn hàng</h2>
+      <div class="summary-row"><span>Tạm tính</span><span id="subtotal">0đ</span></div>
+      <div class="summary-row"><span>Phí vận chuyển</span><span>Miễn phí</span></div>
+      <div class="summary-row"><span>Giảm giá voucher</span><span id="voucherDiscount" style="color:#27ae60;">-0đ</span></div>
+      <div class="summary-row total"><span>Tổng cộng</span><span id="totalAmount">0đ</span></div>
+      <div class="voucher-row">
+        <input class="voucher-input" type="text" id="voucherCode" placeholder="Nhập mã voucher..." />
+        <button class="apply-btn" onclick="applyVoucher()">Áp dụng</button>
+      </div>
+      <button class="checkout-btn" onclick="goCheckout()">Tiến hành thanh toán</button>
+      <button class="continue-btn" onclick="window.location.href='/'">Tiếp tục mua sắm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  // Kiểm tra đăng nhập
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!guardLogin()) return;
+    renderCart();
+  });
+
+  let voucherDiscount = 0;
+
+  function renderCart() {
+    const cart = getCart();
+    document.getElementById('itemCount').textContent = cart.length;
+
+    if (!cart.length) {
+      document.getElementById('cartItems').innerHTML = '<div class="empty">🛒<br>Giỏ hàng trống. Hãy thêm sản phẩm!</div>';
+      document.getElementById('subtotal').textContent = formatPrice(0);
+      document.getElementById('totalAmount').textContent = formatPrice(0);
+      return;
+    }
+
+    document.getElementById('cartItems').innerHTML = cart.map(item => `
+      <div class="cart-item">
+        <img class="item-img" src="${item.imageUrl}" alt="${item.name}" onerror="this.style.background='#f0f0f0';this.src=''" />
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">${formatPrice(item.price)}</div>
+          <div class="qty-controls">
+            <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+            <span class="qty-num">${item.qty}</span>
+            <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+            <button class="remove-btn" onclick="removeItem(${item.id})">Xóa</button>
+          </div>
+        </div>
+        <div style="font-weight:600;">${formatPrice(item.price * item.qty)}</div>
+      </div>`).join('');
+
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    document.getElementById('subtotal').textContent = formatPrice(subtotal);
+    document.getElementById('voucherDiscount').textContent = `-${formatPrice(voucherDiscount)}`;
+    document.getElementById('totalAmount').textContent = formatPrice(subtotal - voucherDiscount);
+  }
+
+  function changeQty(id, delta) {
+    const cart = getCart();
+    const item = cart.find(i => i.id === id);
+    if (item) { item.qty = Math.max(1, item.qty + delta); saveCart(cart); }
+    renderCart();
+  }
+
+  function removeItem(id) {
+    removeFromCart(id);
+    renderCart();
+  }
+
+  async function applyVoucher() {
+    const code = document.getElementById('voucherCode').value.trim();
+    if (!code) return showToast('Vui lòng nhập mã voucher', 'error');
+    try {
+      const data = await apiCreatePayment; // placeholder - cần endpoint voucher thực
+      const res = await fetch(`/api/v1/vouchers/check?code=${code}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      const body = await res.json();
+      if (res.ok && body.data?.discountPercent) {
+        const subtotal = getCartTotal();
+        voucherDiscount = subtotal * body.data.discountPercent / 100;
+        localStorage.setItem('voucher', JSON.stringify({ id: body.data.id, code, discountPercent: body.data.discountPercent }));
+        renderCart();
+        showToast(`✓ Áp dụng voucher thành công! Giảm ${body.data.discountPercent}%`);
+      } else {
+        showToast('Mã voucher không hợp lệ hoặc đã hết hạn', 'error');
+      }
+    } catch {
+      showToast('Không thể kiểm tra voucher', 'error');
+    }
+  }
+
+  function goCheckout() {
+    if (!getCart().length) return showToast('Giỏ hàng trống!', 'error');
+    window.location.href = '/pages/checkout.html';
+  }
+</script>
+</body>
+</html>

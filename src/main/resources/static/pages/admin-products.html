@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Quản lý sản phẩm</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; color:#111; display:flex; min-height:100vh; }
+    aside { width:220px; background:#111; color:#fff; padding:1.5rem 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
+    .sidebar-logo { font-size:1.2rem; font-weight:700; padding:0 1.5rem 1.5rem; border-bottom:1px solid #333; }
+    .sidebar-logo span { color:#e53935; }
+    .menu-item { display:block; padding:0.75rem 1.5rem; color:#aaa; text-decoration:none; font-size:0.9rem; transition:all 0.2s; }
+    .menu-item:hover, .menu-item.active { background:#222; color:#fff; }
+    .menu-item.active { border-left:3px solid #e53935; }
+    .main { margin-left:220px; flex:1; padding:2rem; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+    h1 { font-size:1.3rem; font-weight:600; }
+    .btn { padding:0.6rem 1.2rem; border-radius:8px; font-size:0.875rem; cursor:pointer; border:none; font-weight:500; transition: all 0.2s; }
+    .btn-primary { background:#111; color:#fff; }
+    .btn-primary:hover { background:#333; }
+    .btn-danger { background:#fff3f3; color:#e53935; border:1px solid #f5c6cb; }
+    .btn-danger:hover { background:#ffe0e0; }
+    .btn-edit { background:#f0f4ff; color:#1565c0; border:1px solid #bbcfff; }
+    .btn-edit:hover { background:#dce8ff; }
+    .btn-sm { padding:0.3rem 0.7rem; font-size:0.8rem; }
+    .search-row { display:flex; gap:0.75rem; margin-bottom:1.5rem; }
+    .search-row input, .search-row select { padding:0.65rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff; }
+    .search-row input { flex:1; }
+    .table-card { background:#fff; border-radius:12px; border:1px solid #eee; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#fafafa; padding:0.85rem 1rem; text-align:left; font-size:0.8rem; font-weight:600; color:#555; border-bottom:1px solid #eee; }
+    td { padding:0.85rem 1rem; font-size:0.875rem; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafafa; }
+    .product-cell { display:flex; align-items:center; gap:0.75rem; }
+    .product-thumb { width:44px; height:44px; border-radius:6px; object-fit:cover; background:#f0f0f0; flex-shrink:0; }
+    .price { font-weight:600; color:#e53935; }
+    .discount-badge { background:#fff3f3; color:#e53935; font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:4px; font-weight:600; }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .empty { text-align:center; padding:3rem; color:#888; }
+
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:16px; padding:2rem; max-width:680px; width:95%; max-height:92vh; overflow-y:auto; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+    .modal-title { font-size:1.1rem; font-weight:600; }
+    .close-btn { background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; }
+    .form-group { margin-bottom:1rem; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; }
+    label { display:block; font-size:0.8rem; font-weight:500; color:#555; margin-bottom:0.35rem; }
+    input[type=text], input[type=number], input[type=url], select, textarea {
+      width:100%; padding:0.65rem 0.9rem; border:1px solid #ddd; border-radius:8px;
+      font-size:0.9rem; outline:none; font-family:inherit;
+    }
+    input:focus, select:focus, textarea:focus { border-color:#111; }
+    textarea { resize:vertical; min-height:80px; }
+    .modal-footer { display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1.5rem; border-top:1px solid #eee; padding-top:1.25rem; }
+    .btn-cancel { background:#f5f5f5; color:#555; border:1px solid #ddd; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer; font-size:0.875rem; }
+
+    /* Section divider */
+    .section-divider { font-size:0.875rem; font-weight:600; color:#111; margin:1.5rem 0 1rem; padding-bottom:0.5rem; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; }
+
+    /* Variant list */
+    .variant-list { display:flex; flex-direction:column; gap:0.75rem; }
+    .variant-item { border:1px solid #eee; border-radius:10px; padding:1rem; background:#fafafa; position:relative; }
+    .variant-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; }
+    .variant-label { font-size:0.85rem; font-weight:600; color:#555; }
+    .remove-variant-btn { background:none; border:none; color:#e53935; cursor:pointer; font-size:0.85rem; padding:0.2rem 0.5rem; border-radius:4px; }
+    .remove-variant-btn:hover { background:#fff3f3; }
+
+    /* Attributes */
+    .attr-list { display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem; }
+    .attr-row { display:flex; gap:0.5rem; align-items:center; }
+    .attr-row input { padding:0.5rem 0.75rem; font-size:0.85rem; }
+    .remove-attr-btn { background:none; border:none; color:#aaa; cursor:pointer; font-size:1.1rem; padding:0 0.3rem; flex-shrink:0; }
+    .remove-attr-btn:hover { color:#e53935; }
+    .add-attr-btn { background:none; border:1px dashed #ddd; color:#888; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.8rem; cursor:pointer; margin-top:0.5rem; width:100%; }
+    .add-attr-btn:hover { border-color:#111; color:#111; }
+
+    /* Tab trong modal detail */
+    .detail-tabs { display:flex; border-bottom:1px solid #eee; margin-bottom:1.5rem; gap:0; }
+    .detail-tab { padding:0.6rem 1.25rem; cursor:pointer; font-size:0.9rem; color:#888; border-bottom:2px solid transparent; margin-bottom:-1px; }
+    .detail-tab.active { color:#111; border-bottom-color:#111; font-weight:600; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* Variant table */
+    .variant-table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+    .variant-table th { background:#f5f5f5; padding:0.6rem 0.8rem; text-align:left; font-weight:600; color:#555; }
+    .variant-table td { padding:0.6rem 0.8rem; border-bottom:1px solid #f0f0f0; }
+    .stock-badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:10px; font-size:0.75rem; font-weight:600; }
+    .stock-ok { background:#e8f5e9; color:#2e7d32; }
+    .stock-low { background:#fff8e1; color:#f57f17; }
+    .stock-out { background:#fff3f3; color:#c62828; }
+  </style>
+</head>
+<body>
+<aside>
+  <div class="sidebar-logo">Shop<span>VN</span> Admin</div>
+  <nav>
+    <a href="/pages/admin-categories.html" class="menu-item">🗂️ Danh mục</a>
+    <a href="/pages/admin-products.html" class="menu-item active">📦 Sản phẩm</a>
+    <a href="/pages/admin-orders.html" class="menu-item">📋 Đơn hàng</a>
+    <a href="/" class="menu-item">🏠 Trang chủ</a>
+    <a href="#" class="menu-item" onclick="localStorage.clear(); window.location.href='/pages/login.html'">🚪 Đăng xuất</a>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="page-header">
+    <h1>Quản lý sản phẩm</h1>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Thêm sản phẩm</button>
+  </div>
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()" />
+    <select id="categoryFilter" onchange="filterProducts()">
+      <option value="">Tất cả danh mục</option>
+    </select>
+  </div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Sản phẩm</th>
+          <th>Giá gốc</th>
+          <th>Giảm giá</th>
+          <th>Giá bán</th>
+          <th>Variants</th>
+          <th>Ngày tạo</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="productTable">
+        <tr><td colspan="7" class="empty">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal thêm/sửa sản phẩm -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Thêm sản phẩm</h3>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+
+    <!-- Tab -->
+    <div class="detail-tabs">
+      <div class="detail-tab active" onclick="switchTab('info', this)">Thông tin cơ bản</div>
+      <div class="detail-tab" onclick="switchTab('variants', this)">Biến thể sản phẩm</div>
+    </div>
+
+    <!-- Tab 1: Thông tin cơ bản -->
+    <div class="tab-content active" id="tab-info">
+      <div class="form-group">
+        <label>Tên sản phẩm *</label>
+        <input type="text" id="pName" placeholder="Nhập tên sản phẩm" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Giá gốc (VND) *</label>
+          <input type="number" id="pPrice" placeholder="100000" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Giảm giá (%)</label>
+          <input type="number" id="pDiscount" value="0" min="0" max="100" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Danh mục</label>
+        <select id="pCategory"><option value="">Chọn danh mục</option></select>
+      </div>
+      <div class="form-group">
+        <label>URL hình ảnh</label>
+        <input type="url" id="pImage" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>Mô tả sản phẩm</label>
+        <textarea id="pDesc" rows="4" placeholder="Mô tả chi tiết sản phẩm..."></textarea>
+      </div>
+    </div>
+
+    <!-- Tab 2: Biến thể -->
+    <div class="tab-content" id="tab-variants">
+      <p style="font-size:0.875rem; color:#888; margin-bottom:1rem;">
+        Biến thể là các phiên bản khác nhau của sản phẩm (màu sắc, kích thước...). 
+        Mỗi biến thể có giá, tồn kho và SKU riêng.
+      </p>
+      <div class="variant-list" id="variantList"></div>
+      <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="addVariant()">
+        + Thêm biến thể
+      </button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveProduct()">💾 Lưu sản phẩm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xem chi tiết + quản lý variants -->
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal" style="max-width:780px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="detailTitle">Chi tiết sản phẩm</h3>
+      <button class="close-btn" onclick="closeDetailModal()">×</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!guardAdmin()) return;
+    loadCategories();
+    loadProducts();
+  });
+
+  let allProducts = [];
+  let editingId = null;
+  let variantCount = 0;
+
+  // ============================================================
+  // TAB
+  // ============================================================
+  function switchTab(tabName, el) {
+    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+  }
+
+  // ============================================================
+  // LOAD DATA
+  // ============================================================
+  async function loadCategories() {
+    try {
+      const categories = await apiGetCategories();
+      const catFilter = document.getElementById('categoryFilter');
+      const pCat = document.getElementById('pCategory');
+      catFilter.innerHTML = '<option value="">Tất cả danh mục</option>';
+      pCat.innerHTML = '<option value="">Chọn danh mục</option>';
+      categories.forEach(c => {
+        catFilter.innerHTML += `<option value="${c.id}">${c.categoryName}</option>`;
+        pCat.innerHTML += `<option value="${c.id}">${c.categoryName}</option>`;
+      });
+    } catch { showToast('Không thể tải danh mục', 'error'); }
+  }
+
+  async function loadProducts() {
+    try {
+      allProducts = await apiGetProducts();
+      renderTable(allProducts);
+    } catch {
+      document.getElementById('productTable').innerHTML =
+        '<tr><td colspan="7" class="empty">Không thể tải sản phẩm.</td></tr>';
+    }
+  }
+
+  // ============================================================
+  // RENDER TABLE
+  // ============================================================
+  function filterProducts() {
+    const kw = document.getElementById('searchInput').value.toLowerCase();
+    const cat = document.getElementById('categoryFilter').value;
+    renderTable(allProducts.filter(p =>
+      (!kw || p.name.toLowerCase().includes(kw)) &&
+      (!cat || String(p.category?.id) === cat)
+    ));
+  }
+
+  function renderTable(products) {
+    const tbody = document.getElementById('productTable');
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Không có sản phẩm nào.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = products.map(p => {
+      const selling = p.basePrice * (1 - (p.discountPercent || 0) / 100);
+      const variantCount = p.productVariants?.length || 0;
+      return `<tr>
+        <td><div class="product-cell">
+          <img class="product-thumb" src="${p.imageUrl||''}"
+               onerror="this.style.background='#f0f0f0';this.src=''" />
+          <div>
+            <div style="font-weight:500;">${p.name}</div>
+            <div style="font-size:0.8rem;color:#888;">${p.category?.categoryName||'—'}</div>
+          </div>
+        </div></td>
+        <td>${formatPrice(p.basePrice)}</td>
+        <td>${p.discountPercent > 0 ? `<span class="discount-badge">-${p.discountPercent}%</span>` : '—'}</td>
+        <td class="price">${formatPrice(selling)}</td>
+        <td>
+          <span style="font-size:0.85rem; color:#555;">${variantCount} biến thể</span>
+        </td>
+        <td style="color:#888;font-size:0.8rem;">${formatDate(p.createdAt)}</td>
+        <td><div class="actions">
+          <button class="btn btn-edit btn-sm" onclick="openEditModal(${p.id})">Sửa</button>
+          <button class="btn btn-sm" style="background:#f0f9f4;color:#2e7d32;border:1px solid #c8e6c9;"
+                  onclick="openDetailModal(${p.id})">Variants</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Xóa</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ============================================================
+  // MODAL THÊM/SỬA SẢN PHẨM
+  // ============================================================
+  function openAddModal() {
+    editingId = null;
+    variantCount = 0;
+    document.getElementById('modalTitle').textContent = 'Thêm sản phẩm mới';
+    document.getElementById('pName').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pDiscount').value = '0';
+    document.getElementById('pCategory').value = '';
+    document.getElementById('pImage').value = '';
+    document.getElementById('pDesc').value = '';
+    document.getElementById('variantList').innerHTML = '';
+    // Reset về tab đầu
+    document.querySelectorAll('.detail-tab')[0].click();
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function openEditModal(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    variantCount = 0;
+    document.getElementById('modalTitle').textContent = 'Sửa sản phẩm';
+    document.getElementById('pName').value = p.name || '';
+    document.getElementById('pPrice').value = p.basePrice || '';
+    document.getElementById('pDiscount').value = p.discountPercent || 0;
+    document.getElementById('pCategory').value = p.category?.id || '';
+    document.getElementById('pImage').value = p.imageUrl || '';
+    document.getElementById('pDesc').value = p.description || '';
+
+    // Render variants có sẵn
+    const variantList = document.getElementById('variantList');
+    variantList.innerHTML = '';
+    if (p.productVariants?.length) {
+      p.productVariants.forEach(v => {
+        addVariant({
+          sku: v.sku,
+          price: v.price,
+          stock: v.stock,
+          attributes: v.productVariantOptions || []
+        });
+      });
+    }
+
+    document.querySelectorAll('.detail-tab')[0].click();
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+  }
+
+  // ============================================================
+  // VARIANT BUILDER
+  // ============================================================
+  function addVariant(data = null) {
+    variantCount++;
+    const idx = variantCount;
+    const list = document.getElementById('variantList');
+
+    const sku = data?.sku || '';
+    const price = data?.price || '';
+    const stock = data?.stock || '';
+
+    const div = document.createElement('div');
+    div.className = 'variant-item';
+    div.id = `variant-${idx}`;
+    div.innerHTML = `
+      <div class="variant-item-header">
+        <span class="variant-label">Biến thể #${idx}</span>
+        <button class="remove-variant-btn" onclick="removeVariant(${idx})">✕ Xóa</button>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>SKU</label>
+          <input type="text" id="v-sku-${idx}" value="${sku}" placeholder="VD: SKU001" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Giá (VND) *</label>
+          <input type="number" id="v-price-${idx}" value="${price}" placeholder="0" min="0" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Tồn kho *</label>
+          <input type="number" id="v-stock-${idx}" value="${stock}" placeholder="0" min="0" />
+        </div>
+      </div>
+      <div style="margin-top:0.75rem;">
+        <label style="margin-bottom:0.4rem;">Thuộc tính (màu sắc, kích thước...)</label>
+        <div class="attr-list" id="attrs-${idx}"></div>
+        <button class="add-attr-btn" onclick="addAttr(${idx})">+ Thêm thuộc tính</button>
+      </div>`;
+    list.appendChild(div);
+
+    // Thêm attributes có sẵn
+    if (data?.attributes?.length) {
+      data.attributes.forEach(attr => {
+        addAttr(idx, attr.attribute || attr.key, attr.value);
+      });
+    }
+  }
+
+  function removeVariant(idx) {
+    document.getElementById(`variant-${idx}`)?.remove();
+  }
+
+  function addAttr(variantIdx, key = '', value = '') {
+    const attrList = document.getElementById(`attrs-${variantIdx}`);
+    const attrId = Date.now();
+    const row = document.createElement('div');
+    row.className = 'attr-row';
+    row.id = `attr-${attrId}`;
+    row.innerHTML = `
+      <input type="text" placeholder="Tên (VD: Màu)" value="${key}" style="flex:1;" />
+      <input type="text" placeholder="Giá trị (VD: Đỏ)" value="${value}" style="flex:1;" />
+      <button class="remove-attr-btn" onclick="document.getElementById('attr-${attrId}').remove()">✕</button>`;
+    attrList.appendChild(row);
+  }
+
+  function collectVariants() {
+    const variants = [];
+    document.querySelectorAll('.variant-item').forEach(item => {
+      const idx = item.id.replace('variant-', '');
+      const sku = document.getElementById(`v-sku-${idx}`)?.value.trim();
+      const price = parseFloat(document.getElementById(`v-price-${idx}`)?.value);
+      const stock = parseInt(document.getElementById(`v-stock-${idx}`)?.value);
+
+      if (!price || isNaN(price)) return; // skip invalid
+
+      const attributes = {};
+      item.querySelectorAll('.attr-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const k = inputs[0]?.value.trim();
+        const v = inputs[1]?.value.trim();
+        if (k && v) attributes[k] = v;
+      });
+
+      variants.push({ sku, price, stockQuantity: stock || 0, attributes });
+    });
+    return variants;
+  }
+
+  // ============================================================
+  // SAVE PRODUCT
+  // ============================================================
+  async function saveProduct() {
+    const name = document.getElementById('pName').value.trim();
+    const basePrice = parseFloat(document.getElementById('pPrice').value);
+    if (!name) { showToast('Vui lòng nhập tên sản phẩm', 'error'); return; }
+    if (!basePrice || isNaN(basePrice)) { showToast('Vui lòng nhập giá sản phẩm', 'error'); return; }
+
+    const catId = document.getElementById('pCategory').value;
+    if (!catId) { showToast('Vui lòng chọn danh mục', 'error'); return; }
+
+    const variants = collectVariants();
+    const body = {
+      name,
+      basePrice,
+      discountPercent: parseFloat(document.getElementById('pDiscount').value) || 0,
+      categoryId: parseInt(catId),
+      imageUrl: document.getElementById('pImage').value.trim(),
+      description: document.getElementById('pDesc').value.trim(),
+      variants: variants.length > 0 ? variants : null
+    };
+
+    try {
+      if (editingId) {
+        await apiUpdateProduct(editingId, body);
+        showToast('✓ Đã cập nhật sản phẩm');
+      } else {
+        await apiCreateProduct(body);
+        showToast('✓ Đã thêm sản phẩm');
+      }
+      closeModal();
+      loadProducts();
+    } catch (err) {
+      showToast('Lỗi: ' + err.message, 'error');
+    }
+  }
+
+  // ============================================================
+  // DELETE PRODUCT
+  // ============================================================
+  async function deleteProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!confirm(`Xóa sản phẩm "${p?.name}"? Tất cả biến thể cũng sẽ bị xóa.`)) return;
+    try {
+      await apiDeleteProduct(id);
+      showToast('✓ Đã xóa sản phẩm');
+      loadProducts();
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  // ============================================================
+  // MODAL CHI TIẾT / QUẢN LÝ VARIANTS
+  // ============================================================
+  async function openDetailModal(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById('detailTitle').textContent = `Variants: ${p.name}`;
+    const content = document.getElementById('detailContent');
+
+    const variants = p.productVariants || [];
+
+    content.innerHTML = `
+      <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.875rem; color:#555;">${variants.length} biến thể</span>
+        <button class="btn btn-primary btn-sm" onclick="openAddVariantInline(${id})">+ Thêm biến thể</button>
+      </div>
+      ${variants.length === 0 ? '<div class="empty" style="padding:2rem;">Chưa có biến thể nào.</div>' : `
+      <table class="variant-table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Giá</th>
+            <th>Tồn kho</th>
+            <th>Thuộc tính</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${variants.map(v => `
+            <tr>
+              <td style="font-weight:500;">${v.sku || '—'}</td>
+              <td class="price">${formatPrice(v.price)}</td>
+              <td>
+                <span class="stock-badge ${v.stock > 10 ? 'stock-ok' : v.stock > 0 ? 'stock-low' : 'stock-out'}">
+                  ${v.stock} còn lại
+                </span>
+              </td>
+              <td>
+                ${(v.productVariantOptions || []).map(opt =>
+                  `<span style="background:#f0f0f0;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.8rem;margin-right:0.3rem;">
+                    ${opt.attribute}: ${opt.value}
+                  </span>`
+                ).join('')}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
+      <div id="addVariantInline" style="display:none; margin-top:1.5rem; border-top:1px solid #eee; padding-top:1.25rem;">
+        <div style="font-weight:600; margin-bottom:1rem;">Thêm biến thể mới</div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>SKU</label>
+            <input type="text" id="new-sku" placeholder="SKU001" />
+          </div>
+          <div class="form-group">
+            <label>Giá *</label>
+            <input type="number" id="new-price" placeholder="0" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Tồn kho *</label>
+            <input type="number" id="new-stock" placeholder="0" min="0" />
+          </div>
+        </div>
+        <div>
+          <label>Thuộc tính</label>
+          <div class="attr-list" id="new-attrs"></div>
+          <button class="add-attr-btn" onclick="addNewAttr()">+ Thêm thuộc tính</button>
+        </div>
+        <div style="display:flex; gap:0.75rem; margin-top:1rem;">
+          <button class="btn-cancel" onclick="document.getElementById('addVariantInline').style.display='none'">Hủy</button>
+          <button class="btn btn-primary" onclick="saveNewVariant(${id})">Lưu biến thể</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('detailOverlay').classList.add('show');
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detailOverlay').classList.remove('show');
+  }
+
+  function openAddVariantInline(productId) {
+    document.getElementById('addVariantInline').style.display = 'block';
+    document.getElementById('new-attrs').innerHTML = '';
+  }
+
+  let newAttrCount = 0;
+  function addNewAttr() {
+    newAttrCount++;
+    const id = `new-attr-${newAttrCount}`;
+    const row = document.createElement('div');
+    row.className = 'attr-row';
+    row.id = id;
+    row.innerHTML = `
+      <input type="text" placeholder="Tên (VD: Màu)" style="flex:1;" />
+      <input type="text" placeholder="Giá trị (VD: Đỏ)" style="flex:1;" />
+      <button class="remove-attr-btn" onclick="document.getElementById('${id}').remove()">✕</button>`;
+    document.getElementById('new-attrs').appendChild(row);
+  }
+
+  async function saveNewVariant(productId) {
+    const sku = document.getElementById('new-sku').value.trim();
+    const price = parseFloat(document.getElementById('new-price').value);
+    const stock = parseInt(document.getElementById('new-stock').value) || 0;
+
+    if (!price || isNaN(price)) { showToast('Vui lòng nhập giá biến thể', 'error'); return; }
+
+    const attributes = {};
+    document.querySelectorAll('#new-attrs .attr-row').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      const k = inputs[0]?.value.trim();
+      const v = inputs[1]?.value.trim();
+      if (k && v) attributes[k] = v;
+    });
+
+    // Lấy product hiện tại và update với variant mới
+    const p = allProducts.find(x => x.id === productId);
+    if (!p) return;
+
+    try {
+      await apiUpdateProduct(productId, {
+        name: p.name,
+        basePrice: p.basePrice,
+        discountPercent: p.discountPercent,
+        categoryId: p.category?.id,
+        imageUrl: p.imageUrl,
+        description: p.description,
+        variants: [{ sku, price, stockQuantity: stock, attributes }]
+      });
+      showToast('✓ Đã thêm biến thể');
+      closeDetailModal();
+      loadProducts();
+    } catch (err) {
+      showToast('Lỗi: ' + err.message, 'error');
+    }
+  }
+
+  // ============================================================
+  // API helpers cho admin endpoints
+  // ============================================================
+  async function apiCreateProduct(data) {
+    const res = await fetch('/api/v1/admin/products', {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  }
+
+  async function apiUpdateProduct(id, data) {
+    const res = await fetch(`/api/v1/admin/products/${id}`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  }
+
+  async function apiDeleteProduct(id) {
+    const res = await fetch(`/api/v1/admin/products/${id}`, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    if (!res.ok) { const b = await res.json().catch(()=>({})); throw new Error(b.message||'Không thể xóa'); }
+    return true;
+  }
+
+  // Đóng modal khi click ngoài
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  });
+  document.getElementById('detailOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('detailOverlay')) closeDetailModal();
+  });
+</script>
+</body>
+</html>

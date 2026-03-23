@@ -19,6 +19,8 @@ public class CreateOrderRequest {
 
     private String receiverName;
 
+    private String email; // thêm email
+
     private String phone;
 
     private PaymentMethod paymentMethod;

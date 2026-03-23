@@ -5,12 +5,24 @@ import com.Payment.Shop.dto.request.CreateOrderRequest;
 import com.Payment.Shop.dto.response.BaseOrderResponse;
 import com.Payment.Shop.entity.Order;
 
+import java.util.List;
+
 public interface IOrderService {
 
+    // Existing
     BaseOrderResponse createOrder(CreateOrderRequest createOrderRequest);
-
     void markOrderAsPaid(Long orderId, PaymentMethod paymentMethod);
-
     Order findOrderWithItemsById(Long orderId);
 
+    // New - User
+    List<BaseOrderResponse> getMyOrders();
+    BaseOrderResponse getOrderById(Long id);
+    BaseOrderResponse cancelOrder(Long id);
+
+    // New - Admin
+    List<BaseOrderResponse> getAllOrders(String status);
+    BaseOrderResponse updateOrderStatus(Long id, String status);
+
+    // New - Payment
+    void markOrderAsFailed(Long orderId, PaymentMethod paymentMethod);
 }

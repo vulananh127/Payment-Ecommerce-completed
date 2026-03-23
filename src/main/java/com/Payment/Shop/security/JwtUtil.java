@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 
 // Util class for JWT actions
 
@@ -138,6 +139,7 @@ public class JwtUtil {
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(String.valueOf(user.getId()))
+                .claim("authorities", List.of("ROLE_" + user.getRole()))  // ← List thay vì String   // lấy ROLE
                 .claim("user", userLogin)
                 .build();
 

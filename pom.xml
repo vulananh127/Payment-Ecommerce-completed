@@ -8,7 +8,7 @@
 		<version>3.4.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.GeekUp</groupId>
+	<groupId>com.Payment</groupId>
 	<artifactId>Shop</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Shop</name>
@@ -68,6 +68,13 @@
 			<scope>runtime</scope>
 
 		</dependency>
+
+		<!-- <dependency>
+			<groupId>com.microsoft.sqlserver</groupId>
+			<artifactId>mssql-jdbc</artifactId>
+			<scope>runtime</scope>
+		</dependency> -->
+		
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -103,6 +110,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<mainClass>com.Payment.Shop.ShopApplication</mainClass>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

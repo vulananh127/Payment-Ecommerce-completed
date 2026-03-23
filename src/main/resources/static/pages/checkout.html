@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanh toán - ShopVN</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; color:#111; }
+    nav { background:#fff; border-bottom:1px solid #eee; padding:0 2rem; display:flex; align-items:center; height:60px; }
+    .logo { font-size:1.4rem; font-weight:700; color:#111; text-decoration:none; }
+    .logo span { color:#e53935; }
+    .main { max-width:1100px; margin:2rem auto; padding:0 2rem; display:grid; grid-template-columns:1fr 360px; gap:1.5rem; }
+    .card { background:#fff; border-radius:12px; border:1px solid #eee; padding:1.5rem; margin-bottom:1.25rem; }
+    h2 { font-size:1.1rem; font-weight:600; margin-bottom:1.25rem; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .form-group { margin-bottom:1rem; }
+    label { display:block; font-size:0.8rem; font-weight:500; color:#555; margin-bottom:0.35rem; }
+    input, select, textarea { width:100%; padding:0.65rem 0.9rem; border:1px solid #ddd; border-radius:8px; font-size:0.9rem; outline:none; font-family:inherit; }
+    input:focus, select:focus, textarea:focus { border-color:#111; }
+    textarea { resize:vertical; min-height:80px; }
+    .payment-methods { display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem; }
+    .payment-option { border:2px solid #eee; border-radius:10px; padding:1rem 0.75rem; text-align:center; cursor:pointer; transition:all 0.2s; }
+    .payment-option.selected { border-color:#111; background:#f9f9f9; }
+    .payment-icon { font-size:1.5rem; margin-bottom:0.35rem; }
+    .payment-name { font-size:0.8rem; font-weight:500; }
+    .order-item { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 0; border-bottom:1px solid #f0f0f0; }
+    .order-item:last-child { border-bottom:none; }
+    .order-img { width:56px; height:56px; border-radius:6px; object-fit:cover; background:#f0f0f0; flex-shrink:0; }
+    .order-name { flex:1; font-size:0.875rem; font-weight:500; }
+    .order-qty { font-size:0.8rem; color:#888; }
+    .summary-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.4rem 0; color:#555; }
+    .summary-row.total { font-weight:700; font-size:1.05rem; color:#111; border-top:1px solid #eee; margin-top:0.5rem; padding-top:0.75rem; }
+    .place-btn { width:100%; padding:0.9rem; background:#111; color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:1rem; }
+    .place-btn:hover { background:#333; }
+    .place-btn:disabled { background:#aaa; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">Shop<span>VN</span></a>
+</nav>
+
+<div class="main">
+  <div>
+    <!-- Thông tin giao hàng -->
+    <div class="card">
+      <h2>Thông tin giao hàng</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Họ và tên người nhận *</label>
+          <input type="text" id="receiverName" placeholder="Nguyễn Văn A" />
+        </div>
+        <div class="form-group">
+          <label>Số điện thoại *</label>
+          <input type="tel" id="phone" placeholder="0901234567" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" id="email" placeholder="example@gmail.com" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tỉnh / Thành phố *</label>
+          <input type="text" id="province" placeholder="Hà Nội" />
+        </div>
+        <div class="form-group">
+          <label>Quận / Huyện *</label>
+          <input type="text" id="district" placeholder="Cầu Giấy" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phường / Xã *</label>
+          <input type="text" id="commune" placeholder="Dịch Vọng" />
+        </div>
+        <div class="form-group">
+          <label>Địa chỉ cụ thể *</label>
+          <input type="text" id="address" placeholder="Số 1, ngõ 2..." />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ghi chú</label>
+        <textarea id="note" placeholder="Giao giờ hành chính..."></textarea>
+      </div>
+    </div>
+
+    <!-- Phương thức thanh toán -->
+    <div class="card">
+      <h2>Phương thức thanh toán</h2>
+      <div class="payment-methods">
+        <div class="payment-option selected" onclick="selectPayment('CoD', this)">
+          <div class="payment-icon">💵</div>
+          <div class="payment-name">Tiền mặt (COD)</div>
+        </div>
+        <div class="payment-option" onclick="selectPayment('VNPAY', this)">
+          <div class="payment-icon">🏦</div>
+          <div class="payment-name">VNPay</div>
+        </div>
+        <div class="payment-option" onclick="selectPayment('STRIPE', this)">
+          <div class="payment-icon">💳</div>
+          <div class="payment-name">Stripe</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tóm tắt đơn hàng -->
+  <div>
+    <div class="card">
+      <h2>Đơn hàng của bạn</h2>
+      <div id="orderItems"></div>
+      <div style="margin-top:1rem;">
+        <div class="summary-row"><span>Tạm tính</span><span id="subtotal">0đ</span></div>
+        <div class="summary-row"><span>Phí vận chuyển</span><span>Miễn phí</span></div>
+        <div class="summary-row total"><span>Tổng cộng</span><span id="totalAmount">0đ</span></div>
+      </div>
+      <button class="place-btn" id="placeBtn" onclick="placeOrder()">Đặt hàng</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!guardLogin()) return;
+
+    const cart = getCart();
+    if (!cart.length) { window.location.href = '/pages/cart.html'; return; }
+
+    // Điền email từ user đã đăng nhập
+    const user = getUser();
+    if (user?.email) document.getElementById('email').value = user.email;
+    if (user?.name) document.getElementById('receiverName').value = user.name;
+
+    renderOrder();
+  });
+
+  let selectedPayment = 'CoD';
+
+  function selectPayment(method, el) {
+    selectedPayment = method;
+    document.querySelectorAll('.payment-option').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function renderOrder() {
+    const cart = getCart();
+    document.getElementById('orderItems').innerHTML = cart.map(item => `
+      <div class="order-item">
+        <img class="order-img" src="${item.imageUrl}" alt="${item.name}" onerror="this.style.background='#f0f0f0';this.src=''" />
+        <div>
+          <div class="order-name">${item.name}</div>
+          <div class="order-qty">x${item.qty}</div>
+        </div>
+        <div style="font-weight:600;">${formatPrice(item.price * item.qty)}</div>
+      </div>`).join('');
+    const subtotal = getCartTotal();
+    document.getElementById('subtotal').textContent = formatPrice(subtotal);
+    document.getElementById('totalAmount').textContent = formatPrice(subtotal);
+  }
+
+  async function placeOrder() {
+    const fields = ['receiverName','phone','email','province','district','commune','address'];
+    const formData = {};
+    for (const f of fields) {
+      formData[f] = document.getElementById(f).value.trim();
+      if (!formData[f] && f !== 'email') { showToast('Vui lòng điền đầy đủ thông tin giao hàng', 'error'); return; }
+    }
+    formData.note = document.getElementById('note').value.trim();
+ 
+    const btn = document.getElementById('placeBtn');
+    btn.disabled = true;
+    btn.textContent = 'Đang đặt hàng...';
+ 
+    try {
+      const orderBody = buildOrderBody(formData, selectedPayment);
+      const data = await apiCreateOrder(orderBody);
+      console.log('Full order response:', data);
+      
+      if ((selectedPayment === 'VNPAY' || selectedPayment === 'STRIPE') && data) {
+        try {
+          const paymentData = await apiCreatePayment({
+            orderId: data.orderId || data.id,
+            paymentMethod: selectedPayment,
+            totalAmount: getCartTotal()
+          });
+          console.log('Payment response:', paymentData);
+          
+          // VNPay trả về vnpUrl, Stripe trả về paymentUrl
+          const redirectUrl = paymentData.vnpUrl || paymentData.paymentUrl || paymentData.url;
+          if (redirectUrl) {
+            clearCart();
+            window.location.href = redirectUrl;
+            return;
+          } else {
+            showToast('Không nhận được link thanh toán', 'error');
+          }
+        } catch (payErr) {
+          showToast('Không thể tạo link thanh toán: ' + payErr.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Đặt hàng';
+          return;
+        }
+      }
+ 
+      clearCart();
+      showToast('✓ Đặt hàng thành công!');
+      setTimeout(() => window.location.href = '/pages/orders.html', 1000);
+    } catch (err) {
+      showToast('Lỗi: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Đặt hàng';
+    }
+  }
+
+</script>
+</body>
+</html>

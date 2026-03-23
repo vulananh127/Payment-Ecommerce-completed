@@ -78,6 +78,7 @@ public class BaseOrderService implements IOrderService {
         Order order = Order.builder()
                 .address(createOrderRequest.getAddress())
                 .note(createOrderRequest.getNote())
+                .email(createOrderRequest.getEmail()) // thêm email
                 .phone(createOrderRequest.getPhone())
                 .receiverName(createOrderRequest.getReceiverName())
                 .paymentMethod(createOrderRequest.getPaymentMethod())
@@ -204,5 +205,72 @@ public class BaseOrderService implements IOrderService {
         }
 
 
+    }
+
+    // Mới
+    @Override
+    public List<BaseOrderResponse> getMyOrders() {
+        String userId = JwtUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new BadCredentialsException("User is not authenticated"));
+ 
+        List<Order> orders = orderRepository.findByUserId(Long.parseLong(userId));
+        return orders.stream()
+                .map(o -> modelMapper.map(o, BaseOrderResponse.class))
+                .collect(Collectors.toList());
+    }
+ 
+    @Override
+    public BaseOrderResponse getOrderById(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+        return modelMapper.map(order, BaseOrderResponse.class);
+    }
+ 
+    @Override
+    @Transactional
+    public BaseOrderResponse cancelOrder(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+ 
+        if (!order.getOrderStatus().equals(OrderStatus.PENDING)) {
+            throw new IllegalArgumentException("Cannot cancel order with status: " + order.getOrderStatus());
+        }
+ 
+        order.setOrderStatus(OrderStatus.CANCELED);
+        Order saved = orderRepository.save(order);
+        return modelMapper.map(saved, BaseOrderResponse.class);
+    }
+ 
+    @Override
+    public List<BaseOrderResponse> getAllOrders(String status) {
+        List<Order> orders;
+        if (status != null && !status.isEmpty()) {
+            orders = orderRepository.findByOrderStatus(OrderStatus.valueOf(status));
+        } else {
+            orders = orderRepository.findAll();
+        }
+        return orders.stream()
+                .map(o -> modelMapper.map(o, BaseOrderResponse.class))
+                .collect(Collectors.toList());
+    }
+ 
+    @Override
+    @Transactional
+    public BaseOrderResponse updateOrderStatus(Long id, String status) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+        order.setOrderStatus(OrderStatus.valueOf(status));
+        Order saved = orderRepository.save(order);
+        return modelMapper.map(saved, BaseOrderResponse.class);
+    }
+ 
+    @Override
+    @Transactional
+    public void markOrderAsFailed(Long orderId, PaymentMethod paymentMethod) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        // Giữ PENDING để user có thể thanh toán lại
+        order.setPaymentStatus(PaymentStatus.PAYMENT_FAILED);
+        orderRepository.save(order);
     }
 }

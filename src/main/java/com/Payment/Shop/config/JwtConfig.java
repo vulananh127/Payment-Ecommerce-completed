@@ -7,6 +7,7 @@ import com.nimbusds.jose.util.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -16,6 +17,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.List;
 
 @Configuration
 public class JwtConfig {
@@ -50,14 +53,41 @@ public class JwtConfig {
         return new NimbusJwtEncoder(new ImmutableSecret<>(getSecretKey()));
     }
 
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthorityPrefix("");
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities");
+    // @Bean
+    // public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    //     JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+    //     grantedAuthoritiesConverter.setAuthorityPrefix("");           // ← bỏ prefix mặc định "SCOPE_"
+    //     grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities");
 
-        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-        return jwtAuthenticationConverter;
-    }
+    //     JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+    //     jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+    //     return jwtAuthenticationConverter;
+    // }
+
+    @Bean
+public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+    converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+        // Log xem JWT có những claim gì
+        System.out.println("=== JWT Claims: " + jwt.getClaims());
+        System.out.println("=== authorities claim: " + jwt.getClaim("authorities"));
+
+        Object authClaim = jwt.getClaim("authorities");
+        if (authClaim == null) return List.of();
+
+        if (authClaim instanceof List<?> list) {
+            return list.stream()
+                .map(a -> new SimpleGrantedAuthority(a.toString()))
+                .collect(java.util.stream.Collectors.toList());
+        }
+
+        if (authClaim instanceof String str) {
+            return List.of(new SimpleGrantedAuthority(str));
+        }
+
+        return List.of();
+    });
+    return converter;
+}
+
 }

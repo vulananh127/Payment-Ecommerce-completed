@@ -26,16 +26,36 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.accountRepository = accountRepository;
     }
 
+//     @Override
+//     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+//         Account user = accountRepository.findByEmail(usernameOrEmail)
+//                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
+
+// //        Set<GrantedAuthority> authorities = user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toSet());
+//         Set<GrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+
+//         return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
+//     }
+
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        Account user = accountRepository.findByEmail(usernameOrEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
+public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+    System.out.println("=== loadUserByUsername called with: " + usernameOrEmail);
+    
+    Account user = accountRepository.findByEmail(usernameOrEmail)
+            .orElseThrow(() -> {
+                System.out.println("=== User NOT FOUND: " + usernameOrEmail);
+                return new UsernameNotFoundException("User not found: " + usernameOrEmail);
+            });
 
-//        Set<GrantedAuthority> authorities = user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toSet());
-        Set<GrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+    System.out.println("=== User FOUND: " + user.getEmail() + ", password: " + user.getPassword());
 
-        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
-    }
+    Set<GrantedAuthority> authorities = Collections.singleton(
+        new SimpleGrantedAuthority("ROLE_" + user.getRole())
+    );
 
+    return new org.springframework.security.core.userdetails.User(
+        user.getEmail(), user.getPassword(), authorities
+    );
+}
 
 }

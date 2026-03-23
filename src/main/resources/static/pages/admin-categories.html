@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Quản lý danh mục</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; color:#111; display:flex; min-height:100vh; }
+    aside { width:220px; background:#111; color:#fff; padding:1.5rem 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
+    .sidebar-logo { font-size:1.2rem; font-weight:700; padding:0 1.5rem 1.5rem; border-bottom:1px solid #333; }
+    .sidebar-logo span { color:#e53935; }
+    .menu-item { display:block; padding:0.75rem 1.5rem; color:#aaa; text-decoration:none; font-size:0.9rem; transition:all 0.2s; }
+    .menu-item:hover, .menu-item.active { background:#222; color:#fff; }
+    .menu-item.active { border-left:3px solid #e53935; }
+    .main { margin-left:220px; flex:1; padding:2rem; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+    h1 { font-size:1.3rem; font-weight:600; }
+    .btn { padding:0.6rem 1.2rem; border-radius:8px; font-size:0.875rem; cursor:pointer; border:none; font-weight:500; transition:background 0.2s; }
+    .btn-primary { background:#111; color:#fff; }
+    .btn-primary:hover { background:#333; }
+    .btn-danger { background:#fff3f3; color:#e53935; border:1px solid #f5c6cb; }
+    .btn-danger:hover { background:#ffe0e0; }
+    .btn-edit { background:#f0f4ff; color:#1565c0; border:1px solid #bbcfff; }
+    .btn-edit:hover { background:#dce8ff; }
+    .search-row { display:flex; gap:0.75rem; margin-bottom:1.5rem; }
+    .search-row input { flex:1; padding:0.65rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff; }
+    .table-card { background:#fff; border-radius:12px; border:1px solid #eee; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#fafafa; padding:0.85rem 1rem; text-align:left; font-size:0.8rem; font-weight:600; color:#555; border-bottom:1px solid #eee; }
+    td { padding:0.85rem 1rem; font-size:0.875rem; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafafa; }
+    .actions { display:flex; gap:0.5rem; }
+    .empty { text-align:center; padding:3rem; color:#888; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:16px; padding:2rem; max-width:440px; width:90%; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+    .modal-title { font-size:1.1rem; font-weight:600; }
+    .close-btn { background:none; border:none; font-size:1.5rem; cursor:pointer; color:#888; }
+    .form-group { margin-bottom:1rem; }
+    label { display:block; font-size:0.8rem; font-weight:500; color:#555; margin-bottom:0.35rem; }
+    input { width:100%; padding:0.65rem 0.9rem; border:1px solid #ddd; border-radius:8px; font-size:0.9rem; outline:none; }
+    input:focus { border-color:#111; }
+    .modal-footer { display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1.5rem; }
+    .btn-cancel { background:#f5f5f5; color:#555; border:1px solid #ddd; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer; font-size:0.875rem; }
+  </style>
+</head>
+<body>
+<aside>
+  <div class="sidebar-logo">Shop<span>VN</span> Admin</div>
+  <nav>
+    <a href="/pages/admin-categories.html" class="menu-item active">🗂️ Danh mục</a>
+    <a href="/pages/admin-products.html" class="menu-item">📦 Sản phẩm</a>
+    <a href="/pages/admin-orders.html" class="menu-item">📋 Đơn hàng</a>
+    <a href="/" class="menu-item">🏠 Trang chủ</a>
+    <a href="#" class="menu-item" onclick="localStorage.clear(); window.location.href='/pages/login.html'">🚪 Đăng xuất</a>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="page-header">
+    <h1>Quản lý danh mục</h1>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Thêm danh mục</button>
+  </div>
+
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Tìm kiếm danh mục..." oninput="filterCategories()" />
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Tên danh mục</th>
+          <th>Ngày tạo</th>
+          <th>Số sản phẩm</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="categoryTable">
+        <tr><td colspan="5" class="empty">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal thêm/sửa -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Thêm danh mục</h3>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label>Tên danh mục *</label>
+      <input type="text" id="catName" placeholder="Ví dụ: Điện thoại, Laptop..." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!guardAdmin()) return;
+    loadCategories();
+  });
+
+  let allCategories = [];
+  let editingId = null;
+
+  function filterCategories() {
+    const kw = document.getElementById('searchInput').value.toLowerCase();
+    renderTable(kw ? allCategories.filter(c => c.categoryName.toLowerCase().includes(kw)) : allCategories);
+  }
+
+  function renderTable(categories) {
+    const tbody = document.getElementById('categoryTable');
+    if (!categories.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Không có danh mục nào.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = categories.map(c => `
+      <tr>
+        <td style="color:#888;">#${c.id}</td>
+        <td style="font-weight:500;">${c.categoryName}</td>
+        <td style="color:#888; font-size:0.8rem;">${formatDate(c.createdAt)}</td>
+        <td>${c.productCount || 0} sản phẩm</td>
+        <td><div class="actions">
+          <button class="btn btn-edit" onclick="openEditModal(${c.id})">Sửa</button>
+          <button class="btn btn-danger" onclick="deleteCategory(${c.id})">Xóa</button>
+        </div></td>
+      </tr>`).join('');
+  }
+
+  function openAddModal() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Thêm danh mục';
+    document.getElementById('catName').value = '';
+    document.getElementById('modalOverlay').classList.add('show');
+    setTimeout(() => document.getElementById('catName').focus(), 100);
+  }
+
+  function openEditModal(id) {
+    const c = allCategories.find(x => x.id === id);
+    if (!c) return;
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Sửa danh mục';
+    document.getElementById('catName').value = c.categoryName;
+    document.getElementById('modalOverlay').classList.add('show');
+    setTimeout(() => document.getElementById('catName').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+  }
+
+  async function saveCategory() {
+    const name = document.getElementById('catName').value.trim();
+    if (!name) { showToast('Vui lòng nhập tên danh mục', 'error'); return; }
+    try {
+      if (editingId) await apiUpdateCategory(editingId, name);
+      else await apiCreateCategory(name);
+      showToast(editingId ? '✓ Đã cập nhật danh mục' : '✓ Đã thêm danh mục');
+      closeModal();
+      loadCategories();
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  async function deleteCategory(id) {
+    if (!confirm('Xóa danh mục này?')) return;
+    try {
+      await apiDeleteCategory(id);
+      showToast('✓ Đã xóa danh mục');
+      loadCategories();
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  async function loadCategories() {
+    try {
+      allCategories = await apiGetCategories();
+      renderTable(allCategories);
+    } catch {
+      document.getElementById('categoryTable').innerHTML =
+        '<tr><td colspan="5" class="empty">Không thể tải danh mục.</td></tr>';
+    }
+  }
+
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  });
+
+  document.addEventListener('keypress', e => {
+    if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('show')) {
+      saveCategory();
+    }
+  });
+</script>
+</body>
+</html>
