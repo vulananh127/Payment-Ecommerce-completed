@@ -28,7 +28,8 @@ public class VNPayIpnHandler implements IpnHandler<IpnResponse> {
 
     private SavePaymentRequest buildSavePaymentRequest(Map<String, String> params) {
         var txnRef = params.get(VNPayParams.TXN_REF);
-        var orderId = Long.parseLong(txnRef);
+        // var orderId = Long.parseLong(txnRef);
+        Long orderId = Long.parseLong(txnRef.split("_")[0]);
 
         SavePaymentRequest savePaymentRequest = new SavePaymentRequest();
         savePaymentRequest.setOrderId(orderId);
@@ -96,7 +97,8 @@ public class VNPayIpnHandler implements IpnHandler<IpnResponse> {
 
     try {
 
-        Long orderId = Long.parseLong(txnRef);
+        Long orderId = Long.parseLong(txnRef.split("_")[0]);
+        
 
         if ("00".equals(responseCode)) {
 

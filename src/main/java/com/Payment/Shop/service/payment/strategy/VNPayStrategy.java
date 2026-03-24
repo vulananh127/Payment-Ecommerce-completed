@@ -32,7 +32,8 @@ public class VNPayStrategy extends PaymentStrategy {
     public VNPayResponse processPayment(PaymentRequest request) {
 
         Long amount = (long) (request.getTotalAmount() * VNPayConfig.DEFAULT_MULTIPLIER);  // 1. amount * 100
-        var txnRef = String.valueOf(request.getOrderId());                       // 2. orderId
+        // var txnRef = String.valueOf(request.getOrderId());                       // 2. orderId
+        var txnRef = request.getOrderId() + "_" + System.currentTimeMillis();
         var returnUrl = buildReturnUrl(txnRef);                 // 3. FE redirect by returnUrl
 
         System.out.println("RETURN URL = " + returnUrl);

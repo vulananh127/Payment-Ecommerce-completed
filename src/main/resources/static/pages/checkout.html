@@ -90,17 +90,13 @@
     <div class="card">
       <h2>Phương thức thanh toán</h2>
       <div class="payment-methods">
-        <div class="payment-option selected" onclick="selectPayment('CoD', this)">
+        <div class="payment-option selected" onclick="selectPayment('COD', this)">
           <div class="payment-icon">💵</div>
           <div class="payment-name">Tiền mặt (COD)</div>
         </div>
         <div class="payment-option" onclick="selectPayment('VNPAY', this)">
           <div class="payment-icon">🏦</div>
           <div class="payment-name">VNPay</div>
-        </div>
-        <div class="payment-option" onclick="selectPayment('STRIPE', this)">
-          <div class="payment-icon">💳</div>
-          <div class="payment-name">Stripe</div>
         </div>
       </div>
     </div>
@@ -137,7 +133,7 @@
     renderOrder();
   });
 
-  let selectedPayment = 'CoD';
+  let selectedPayment = 'COD';
 
   function selectPayment(method, el) {
     selectedPayment = method;
