@@ -127,5 +127,5 @@ payment:
     secret-key: ${VNPAY_SECRET_KEY}
     init-payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
     ipn-url: ${BASE_URL}/api/v1/payments/vnpay_ipn
-    return-url: ${BASE_URL}
+    return-url: ${BASE_URL}/api/v1/payments/vnpay_ipn
     timeout: 15 # in minutes

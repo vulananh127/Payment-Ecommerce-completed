@@ -42,7 +42,6 @@ public class VNPayStrategy extends PaymentStrategy {
 
         params.put(VNPayParams.TXN_REF, txnRef);
         params.put(VNPayParams.RETURN_URL, returnUrl);
-        // params.put("vnp_IpnUrl", vnPayConfig.getIpnUrl());
 
         params.put(VNPayParams.IP_ADDRESS, ipAddress);
         params.put(VNPayParams.ORDER_INFO, orderInfo);
@@ -98,11 +97,9 @@ public class VNPayStrategy extends PaymentStrategy {
 
         return String.format("Thanh toan don hang %s. So tien %s", orderInfo, request.getTotalAmount());
     }
-
     private String buildReturnUrl(String orderId) {
-    return vnPayConfig.getReturnUrlFormat();
-}
-    
+        return String.format(vnPayConfig.getReturnUrlFormat(), orderId);
+    }
 
     public boolean verifyIpn(Map<String, String> params) {
     //     var reqSecureHash = params.get(VNPayParams.SECURE_HASH);

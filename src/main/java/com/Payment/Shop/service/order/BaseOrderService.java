@@ -138,6 +138,7 @@ public class BaseOrderService implements IOrderService {
                 orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         order.setPaymentStatus(PaymentStatus.PAYMENT_COMPLETED);
+        order.setOrderStatus(OrderStatus.PAID);
         order.setPaymentMethod(paymentMethod);
         orderRepository.save(order);
     }
