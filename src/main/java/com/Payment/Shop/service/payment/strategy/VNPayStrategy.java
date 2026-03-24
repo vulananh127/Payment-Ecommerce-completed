@@ -98,7 +98,7 @@ public class VNPayStrategy extends PaymentStrategy {
         return String.format("Thanh toan don hang %s. So tien %s", orderInfo, request.getTotalAmount());
     }
     private String buildReturnUrl(String orderId) {
-        return String.format(vnPayConfig.getReturnUrlFormat(), orderId);
+        return String.format(vnPayConfig.getReturnUrlFormat());
     }
 
     public boolean verifyIpn(Map<String, String> params) {

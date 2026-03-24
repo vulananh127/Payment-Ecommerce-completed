@@ -61,6 +61,31 @@ public class PaymentController {
         return ipnHandlerFactory.processIpn(PaymentMethod.VNPAY, params);
     }
 
+    @GetMapping("/vnpay_return")
+public void vnpayReturn(
+        @RequestParam Map<String,String> params,
+        HttpServletResponse response
+) throws IOException {
+
+    log.info("Return params {}", params);
+
+    IpnResponse ipnResponse =
+            ipnHandlerFactory.processIpn(
+                    PaymentMethod.VNPAY,
+                    params
+            );
+
+    if ("00".equals(ipnResponse.getResponseCode())) {
+
+        response.sendRedirect("/pages/orders.html?status=success");
+
+    } else {
+
+        response.sendRedirect("/pages/orders.html?status=fail");
+
+    }
+}
+
     @GetMapping("/stripe-callback")
     void processStripeSuccess(@RequestParam Map<String, String> params, HttpServletRequest request, HttpServletResponse response) {
         log.info("[Stripe] Params: {}", params);
