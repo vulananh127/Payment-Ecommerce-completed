@@ -68,12 +68,12 @@ public class VNPayStrategy extends PaymentStrategy {
                 // 2.1. Build hash data
                 hashPayload.append(fieldName);
                 hashPayload.append(Symbol.EQUAL);
-                hashPayload.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                hashPayload.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
 
                 // 2.2. Build query
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
+                query.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8));
                 query.append(Symbol.EQUAL);
-                query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                query.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
 
                 if (itr.hasNext()) {
                     query.append(Symbol.AND);
@@ -102,32 +102,53 @@ public class VNPayStrategy extends PaymentStrategy {
     }
 
     public boolean verifyIpn(Map<String, String> params) {
-        var reqSecureHash = params.get(VNPayParams.SECURE_HASH);
-        params.remove(VNPayParams.SECURE_HASH);
-        params.remove(VNPayParams.SECURE_HASH_TYPE);
-        var hashPayload = new StringBuilder();
-        var fieldNames = new ArrayList<>(params.keySet());
-        Collections.sort(fieldNames);
+    //     var reqSecureHash = params.get(VNPayParams.SECURE_HASH);
+    //     params.remove(VNPayParams.SECURE_HASH);
+    //     params.remove(VNPayParams.SECURE_HASH_TYPE);
+    //     var hashPayload = new StringBuilder();
+    //     var fieldNames = new ArrayList<>(params.keySet());
+    //     Collections.sort(fieldNames);
 
-        var itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            var fieldName = itr.next();
-            var fieldValue = params.get(fieldName);
-            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                //Build hash data
-                hashPayload.append(fieldName);
-                hashPayload.append(Symbol.EQUAL);
-                hashPayload.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+    //     var itr = fieldNames.iterator();
+    //     while (itr.hasNext()) {
+    //         var fieldName = itr.next();
+    //         var fieldValue = params.get(fieldName);
+    //         if ((fieldValue != null) && (!fieldValue.isEmpty())) {
+    //             //Build hash data
+    //             hashPayload.append(fieldName);
+    //             hashPayload.append(Symbol.EQUAL);
+    //             hashPayload.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
 
-                if (itr.hasNext()) {
-                    hashPayload.append(Symbol.AND);
+    //             if (itr.hasNext()) {
+    //                 hashPayload.append(Symbol.AND);
+    //             }
+    //         }
+    //     }
+
+    //     var secureHash = CryptoUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashPayload.toString());
+    //     return secureHash.equals(reqSecureHash);
+
+            var reqSecureHash = params.get(VNPayParams.SECURE_HASH);
+            params.remove(VNPayParams.SECURE_HASH);
+            params.remove(VNPayParams.SECURE_HASH_TYPE);
+
+            var fieldNames = new ArrayList<>(params.keySet());
+            Collections.sort(fieldNames);
+
+            var hashPayload = new StringBuilder();
+            for (var fieldName : fieldNames) {
+                var fieldValue = params.get(fieldName);
+                if (fieldValue != null && !fieldValue.isEmpty()) {
+                    if (hashPayload.length() > 0) hashPayload.append("&");
+                    hashPayload.append(fieldName)
+                            .append("=")
+                            .append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
                 }
             }
+
+            var secureHash = CryptoUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashPayload.toString());
+            return secureHash.equalsIgnoreCase(reqSecureHash);
         }
-
-        var secureHash = CryptoUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashPayload.toString());
-        return secureHash.equals(reqSecureHash);
-    }
-
+    
 
 }

@@ -27,6 +27,7 @@ public class Product {
 //    @SequenceGenerator(name = "product_seq", sequenceName = "product_seq", allocationSize = 50)
 //    private long id;
 
+
     private String name;
 
     private String description;

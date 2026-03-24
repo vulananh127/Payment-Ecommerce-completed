@@ -14,7 +14,8 @@ import lombok.*;
 public class Payment {
 
     @Id
-    private long id;
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
 
     @Column(nullable = false)
     private PaymentMethod paymentMethod;
@@ -30,8 +31,4 @@ public class Payment {
     @Column(nullable = false)
     private Long orderId;
 
-    @PrePersist
-    public void beforeCreate() {
-        this.id = orderId;
-    }
 }

@@ -96,12 +96,36 @@ public class ProductServiceImpl implements IProductService {
     }
 
     @Override
+    // public List<BaseProductResponse> getAllProducts(String name, Long categoryId) {
+    //     List<Product> products = productRepository.findAllWithFilters(name, categoryId);
+    //     return products.stream()
+    //             .map(p -> modelMapper.map(p, BaseProductResponse.class))
+    //             .collect(Collectors.toList());
+    // }
+
     public List<BaseProductResponse> getAllProducts(String name, Long categoryId) {
-        List<Product> products = productRepository.findAllWithFilters(name, categoryId);
-        return products.stream()
-                .map(p -> modelMapper.map(p, BaseProductResponse.class))
-                .collect(Collectors.toList());
+    if (name != null && !name.trim().isEmpty()) {
+        name = "%" + name.trim() + "%";
+    } else {
+        name = null;
     }
+
+    System.out.println("==== getAllProducts called ====");
+System.out.println("name parameter: " + name + " (class: " + (name != null ? name.getClass() : "null") + ")");
+System.out.println("categoryId parameter: " + categoryId + " (class: " + (categoryId != null ? categoryId.getClass() : "null") + ")");
+
+    List<Product> products = productRepository.findAllWithFilters(name, categoryId);
+
+    System.out.println("Number of products fetched: " + products.size());
+    products.forEach(p -> {
+        System.out.println("Product id=" + p.getId() + ", name=" + p.getName());
+    });
+
+    return products.stream()
+            .map(p -> modelMapper.map(p, BaseProductResponse.class))
+            .collect(Collectors.toList());
+}
+
 
     @Override
     public BaseProductResponse getProductById(Long id) {
