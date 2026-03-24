@@ -126,6 +126,6 @@ payment:
     tmn-code: ${VNPAY_TMN_CODE}
     secret-key: ${VNPAY_SECRET_KEY}
     init-payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    return-url: ${BASE_URL}/api/v1/payments/vnpay_return
     ipn-url: ${BASE_URL}/api/v1/payments/vnpay_ipn
-    return-url: ${BASE_URL}/api/v1/payments/vnpay_ipn
     timeout: 15 # in minutes
