@@ -16,7 +16,8 @@ import com.Payment.Shop.security.JwtUtil;
 import com.Payment.Shop.service.payment.strategy.PaymentStrategy;
 import com.Payment.Shop.service.product.IProductService;
 import jakarta.persistence.OptimisticLockException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -133,6 +134,7 @@ public class BaseOrderService implements IOrderService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markOrderAsPaid(Long orderId, PaymentMethod paymentMethod) {
         Order order = orderRepository.findById(orderId).
                 orElseThrow(() -> new IllegalArgumentException("Order not found"));

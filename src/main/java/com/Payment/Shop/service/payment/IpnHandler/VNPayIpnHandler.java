@@ -51,7 +51,7 @@ public class VNPayIpnHandler implements IpnHandler<IpnResponse> {
      * Khoảng cách giữa các lần gọi lại: 5 phút
      *
      */
-    @Transactional
+    
     public IpnResponse processIPN(Map<String, String> params) {
         if (!vnPayStrategy.verifyIpn(params)) {
             return VnpIpnResponseConst.SIGNATURE_FAILED;

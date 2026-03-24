@@ -10,6 +10,9 @@ import com.Payment.Shop.repository.PaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 // Abstract class for Payment Strategy
 
 @Slf4j
@@ -26,6 +29,7 @@ public abstract class PaymentStrategy {
 
     abstract BasePaymentResponse processPayment(PaymentRequest paymentRequest) throws PaymentException;
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void savePayment(SavePaymentRequest paymentRequest) {
 
         Payment payment = Payment.builder()
