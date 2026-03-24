@@ -99,36 +99,10 @@ public class VNPayStrategy extends PaymentStrategy {
         return String.format("Thanh toan don hang %s. So tien %s", orderInfo, request.getTotalAmount());
     }
     private String buildReturnUrl(String orderId) {
-        return String.format(vnPayConfig.getReturnUrlFormat());
+        return vnPayConfig.getReturnUrlFormat();
     }
 
     public boolean verifyIpn(Map<String, String> params) {
-    //     var reqSecureHash = params.get(VNPayParams.SECURE_HASH);
-    //     params.remove(VNPayParams.SECURE_HASH);
-    //     params.remove(VNPayParams.SECURE_HASH_TYPE);
-    //     var hashPayload = new StringBuilder();
-    //     var fieldNames = new ArrayList<>(params.keySet());
-    //     Collections.sort(fieldNames);
-
-    //     var itr = fieldNames.iterator();
-    //     while (itr.hasNext()) {
-    //         var fieldName = itr.next();
-    //         var fieldValue = params.get(fieldName);
-    //         if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-    //             //Build hash data
-    //             hashPayload.append(fieldName);
-    //             hashPayload.append(Symbol.EQUAL);
-    //             hashPayload.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
-
-    //             if (itr.hasNext()) {
-    //                 hashPayload.append(Symbol.AND);
-    //             }
-    //         }
-    //     }
-
-    //     var secureHash = CryptoUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashPayload.toString());
-    //     return secureHash.equals(reqSecureHash);
-
             var reqSecureHash = params.get(VNPayParams.SECURE_HASH);
             params.remove(VNPayParams.SECURE_HASH);
             params.remove(VNPayParams.SECURE_HASH_TYPE);

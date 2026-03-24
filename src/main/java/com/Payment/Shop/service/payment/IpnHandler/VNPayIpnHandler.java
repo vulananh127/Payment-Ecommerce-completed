@@ -52,35 +52,79 @@ public class VNPayIpnHandler implements IpnHandler<IpnResponse> {
      *
      */
     
+    // public IpnResponse processIPN(Map<String, String> params) {
+    //     if (!vnPayStrategy.verifyIpn(params)) {
+    //         return VnpIpnResponseConst.SIGNATURE_FAILED;
+    //     }
+
+    //     IpnResponse response = null;
+    //     var txnRef = params.get(VNPayParams.TXN_REF);
+        
+    //     try {
+    //         var orderId = Long.parseLong(txnRef);
+    //         var responseCode = params.get(VNPayParams.RESPONSE_CODE);
+    //         if (responseCode.equals("00")) {
+    //             orderService.markOrderAsPaid(orderId, PaymentMethod.VNPAY);
+    //             response = VnpIpnResponseConst.SUCCESS;
+
+    //             SavePaymentRequest savePaymentRequest = this.buildSavePaymentRequest(params);
+    //             vnPayStrategy.savePayment(savePaymentRequest);
+    //         }
+
+    //     }
+    //     catch (IllegalArgumentException e) {
+    //         log.error("Error {}", e.getMessage());
+    //         response = VnpIpnResponseConst.ORDER_NOT_FOUND;
+    //     }
+    //     catch (Exception e) {
+    //         log.error(e.getMessage());
+    //         response = VnpIpnResponseConst.UNKNOWN_ERROR;
+    //     }
+
+    //     log.info("[VNPay Ipn] txnRef: {}, response: {}", txnRef, response);
+    //     return response;
+    // }
+
     public IpnResponse processIPN(Map<String, String> params) {
-        if (!vnPayStrategy.verifyIpn(params)) {
-            return VnpIpnResponseConst.SIGNATURE_FAILED;
-        }
 
-        IpnResponse response = null;
-        var txnRef = params.get(VNPayParams.TXN_REF);
-        try {
-            var orderId = Long.parseLong(txnRef);
-            var responseCode = params.get(VNPayParams.RESPONSE_CODE);
-            if (responseCode.equals("00")) {
-                orderService.markOrderAsPaid(orderId, PaymentMethod.VNPAY);
-                response = VnpIpnResponseConst.SUCCESS;
-
-                SavePaymentRequest savePaymentRequest = this.buildSavePaymentRequest(params);
-                vnPayStrategy.savePayment(savePaymentRequest);
-            }
-
-        }
-        catch (IllegalArgumentException e) {
-            log.error("Error {}", e.getMessage());
-            response = VnpIpnResponseConst.ORDER_NOT_FOUND;
-        }
-        catch (Exception e) {
-            log.error(e.getMessage());
-            response = VnpIpnResponseConst.UNKNOWN_ERROR;
-        }
-
-        log.info("[VNPay Ipn] txnRef: {}, response: {}", txnRef, response);
-        return response;
+    if (!vnPayStrategy.verifyIpn(params)) {
+        return VnpIpnResponseConst.SIGNATURE_FAILED;
     }
+
+    var txnRef = params.get(VNPayParams.TXN_REF);
+    var responseCode = params.get(VNPayParams.RESPONSE_CODE);
+
+    try {
+
+        Long orderId = Long.parseLong(txnRef);
+
+        if ("00".equals(responseCode)) {
+
+            orderService.markOrderAsPaid(
+                orderId,
+                PaymentMethod.VNPAY
+            );
+
+            SavePaymentRequest req =
+                buildSavePaymentRequest(params);
+
+            vnPayStrategy.savePayment(req);
+
+            return VnpIpnResponseConst.SUCCESS;
+
+        } else {
+
+            orderService.markOrderAsFailed(
+                orderId,
+                PaymentMethod.VNPAY
+            );
+
+            return VnpIpnResponseConst.FAILED;
+        }
+
+    } catch (Exception e) {
+
+        return VnpIpnResponseConst.UNKNOWN_ERROR;
+    }
+}
 }

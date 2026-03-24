@@ -15,6 +15,14 @@
     .menu-item.active { border-left:3px solid #e53935; }
     .main { margin-left:220px; flex:1; padding:2rem; }
     h1 { font-size:1.3rem; font-weight:600; margin-bottom:1.5rem; }
+    .btn { padding:0.6rem 1.2rem; border-radius:8px; font-size:0.875rem; cursor:pointer; border:none; font-weight:500; transition: all 0.2s; }
+    .btn-primary { background:#111; color:#fff; }
+    .btn-primary:hover { background:#333; }
+    .btn-danger { background:#fff3f3; color:#e53935; border:1px solid #f5c6cb; }
+    .btn-danger:hover { background:#ffe0e0; }
+    .btn-edit { background:#f0f4ff; color:#1565c0; border:1px solid #bbcfff; }
+    .btn-edit:hover { background:#dce8ff; }
+    .btn-sm { padding:0.3rem 0.7rem; font-size:0.8rem; }
     .stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; margin-bottom:1.5rem; }
     .stat-card { background:#fff; border-radius:10px; border:1px solid #eee; padding:1.25rem; }
     .stat-label { font-size:0.8rem; color:#888; margin-bottom:0.4rem; }
@@ -56,7 +64,7 @@
 </head>
 <body>
 <aside>
-  <div class="sidebar-logo">Shop<span>VN</span> Admin</div>
+  <div class="sidebar-logo">Shop<span>VLA</span> Admin</div>
   <nav>
     <a href="/pages/admin-categories.html" class="menu-item">🗂️ Danh mục</a>
     <a href="/pages/admin-products.html" class="menu-item">📦 Sản phẩm</a>
@@ -78,6 +86,7 @@
     <input type="text" id="searchInput" placeholder="Tìm theo tên, email, ID..." oninput="filterOrders()" />
     <button class="filter-btn active" onclick="setStatus(null, this)">Tất cả</button>
     <button class="filter-btn" onclick="setStatus('PENDING', this)">Chờ xử lý</button>
+    <button class="filter-btn" onclick="setStatus('CONFIRMED', this)">Đã xác nhận</button>
     <button class="filter-btn" onclick="setStatus('ON_DELIVERY', this)">Đang giao</button>
     <button class="filter-btn" onclick="setStatus('DELIVERED', this)">Đã giao</button>
     <button class="filter-btn" onclick="setStatus('CANCELED', this)">Đã hủy</button>
@@ -85,7 +94,7 @@
   <div class="table-card">
     <table>
       <thead>
-        <tr><th>#ID</th><th>Khách hàng</th><th>Tổng tiền</th><th>Thanh toán</th><th>Trạng thái</th><th>Ngày đặt</th><th>Chi tiết</th></tr>
+        <tr><th>#ID</th><th>Khách hàng</th><th>Tổng tiền</th><th>Thanh toán</th><th>Trạng thái</th><th>Ngày đặt</th><th>Thao tác</th></tr>
       </thead>
       <tbody id="orderTable"><tr><td colspan="7" class="empty">Đang tải...</td></tr></tbody>
     </table>
@@ -109,6 +118,49 @@
   </div>
 </div>
 
+<!--Modal updateStat--> 
+<div class="modal-overlay" id="statusModal">
+  <div class="modal" style="max-width:400px">
+
+    <div class="modal-header">
+      <h3 class="modal-title">Cập nhật trạng thái</h3>
+      <button class="close-btn" onclick="closeStatusModal()">×</button>
+    </div>
+
+    <div style="margin-bottom:1rem">
+
+      <label>Trạng thái</label>
+
+      <select id="statusSelect" class="status-select"
+        style="width:100%; margin-top:6px">
+
+        <option value="PENDING">Chờ xử lý</option>
+        <option value="CONFIRMED">Đã xác nhận</option>
+        <option value="ON_DELIVERY">Đang giao</option>
+        <option value="DELIVERED">Đã giao</option>
+        <option value="CANCELED">Đã hủy</option>
+
+      </select>
+
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end">
+
+      <button class="btn"
+        onclick="closeStatusModal()">
+        Hủy
+      </button>
+
+      <button class="btn btn-primary"
+        onclick="saveStatus()">
+        Lưu
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
 <script src="/js/api.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -118,8 +170,9 @@
 
   let allOrders = [];
   let statusFilter = null;
-  const statusLabel = { PENDING:'Chờ xử lý', ON_DELIVERY:'Đang giao', DELIVERED:'Đã giao', CANCELED:'Đã hủy' };
-  const payLabel = { PAYMENT_COMPLETED:'Đã TT', PAYMENT_PROCESSING:'Chờ TT', PAYMENT_FAILED:'TT lỗi' };
+  let editingOrderId = null;
+  const statusLabel = { PENDING:'Chờ xử lý', CONFIRMED:'Đã xác nhận', ON_DELIVERY:'Đang giao', DELIVERED:'Đã giao', CANCELED:'Đã hủy' };
+  const payLabel = { UNPAID: 'COD', PAYMENT_COMPLETED:'Đã thanh toán', PAYMENT_PROCESSING:'Chờ thanh toán', PAYMENT_FAILED:'Thanh toán lỗi' };
 
   function setStatus(status, btn) {
     statusFilter = status;
@@ -139,29 +192,98 @@
     renderTable(filtered);
   }
 
+  // function renderTable(orders) {
+  //   const tbody = document.getElementById('orderTable');
+  //   if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Không có đơn hàng nào.</td></tr>'; return; }
+  //   tbody.innerHTML = orders.map(o => `
+  //     <tr>
+  //       <td style="font-weight:600;">#${o.id}</td>
+  //       <td>
+  //         <div style="font-weight:500;">${o.receiverName||'—'}</div>
+  //         <div style="font-size:0.8rem; color:#888;">${o.email||''}</div>
+  //       </td>
+  //       <td class="amount">${formatPrice(o.totalAmount)}</td>
+  //       <td><span class="pay-badge pay-${o.paymentStatus}">${payLabel[o.paymentStatus]||'—'}</span></td>
+  //       <td>
+  //         <select class="status-select" onchange="updateStatus(${o.id}, this.value)">
+  //           ${['PENDING','ON_DELIVERY','DELIVERED','CANCELED'].map(s =>
+  //             `<option value="${s}" ${o.orderStatus===s?'selected':''}>${statusLabel[s]}</option>`
+  //           ).join('')}
+  //         </select>
+  //       </td>
+  //       <td style="color:#888; font-size:0.8rem;">${formatDate(o.createdAt)}</td>
+  //       <td><button class="detail-btn" onclick="viewDetail(${o.id})">Chi tiết</button></td>
+  //     </tr>`).join('');
+  // }
+
   function renderTable(orders) {
-    const tbody = document.getElementById('orderTable');
-    if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Không có đơn hàng nào.</td></tr>'; return; }
-    tbody.innerHTML = orders.map(o => `
-      <tr>
-        <td style="font-weight:600;">#${o.id}</td>
-        <td>
-          <div style="font-weight:500;">${o.receiverName||'—'}</div>
-          <div style="font-size:0.8rem; color:#888;">${o.email||''}</div>
-        </td>
-        <td class="amount">${formatPrice(o.totalAmount)}</td>
-        <td><span class="pay-badge pay-${o.paymentStatus}">${payLabel[o.paymentStatus]||'—'}</span></td>
-        <td>
-          <select class="status-select" onchange="updateStatus(${o.id}, this.value)">
-            ${['PENDING','ON_DELIVERY','DELIVERED','CANCELED'].map(s =>
-              `<option value="${s}" ${o.orderStatus===s?'selected':''}>${statusLabel[s]}</option>`
-            ).join('')}
-          </select>
-        </td>
-        <td style="color:#888; font-size:0.8rem;">${formatDate(o.createdAt)}</td>
-        <td><button class="detail-btn" onclick="viewDetail(${o.id})">Chi tiết</button></td>
-      </tr>`).join('');
+  const tbody = document.getElementById('orderTable');
+
+  if (!orders.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="empty">Không có đơn hàng nào.</td></tr>';
+    return;
   }
+
+  tbody.innerHTML = orders.map(o => {
+    const id = o.id || o.orderId || o.order_id;
+    return `
+      <tr>
+        <td style="font-weight:600;">#${id}</td>
+        <td>
+          <div style="font-weight:500;">
+            ${o.receiverName || '—'}
+          </div>
+          <div style="font-size:0.8rem; color:#888;">
+            ${o.email || ''}
+          </div>
+        </td>
+        <td class="amount">
+          ${formatPrice(o.totalAmount)}
+        </td>
+        <td>
+          <span class="pay-badge pay-${o.paymentStatus}">
+            ${payLabel[o.paymentStatus] || o.paymentStatus || '—'}
+          </span>
+        </td>
+        <td>
+          <span class="status-badge status-${o.orderStatus}">
+            ${statusLabel[o.orderStatus] || o.orderStatus}
+          </span>
+        </td>
+        <td style="color:#888; font-size:0.8rem;">
+          ${formatDate(o.createdAt)}
+        </td>
+        <td>
+          <button class="btn btn-edit btn-sm" onclick="openStatusModal(${id}, '${o.orderStatus}')">Cập nhật</button>
+          <button class="btn btn-danger btn-sm" onclick="viewDetail(${id})">Chi tiết</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+    function openStatusModal(id, status) {
+    editingOrderId = id;
+    document.getElementById("statusSelect").value = status;
+    document
+      .getElementById("statusModal")
+      .classList.add("show");
+    }
+  
+    function closeStatusModal() {
+      editingOrderId = null;
+      document
+        .getElementById("statusModal")
+        .classList.remove("show");
+    }
+
+    function saveStatus() {
+      const status =
+        document.getElementById("statusSelect").value;
+      updateStatus(editingOrderId, status);
+      closeStatusModal();
+    }
 
   async function updateStatus(id, status) {
     try {
@@ -172,7 +294,7 @@
   }
 
   function viewDetail(id) {
-    const o = allOrders.find(x => x.id === id);
+    const o = allOrders.find((x.id || x.orderId || x.order_id) == id);
     if (!o) return;
     document.getElementById('modalTitle').textContent = `Chi tiết đơn hàng #${o.id}`;
     document.getElementById('orderInfo').innerHTML = `

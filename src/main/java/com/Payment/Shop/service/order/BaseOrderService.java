@@ -5,7 +5,9 @@ import com.Payment.Shop.constant.PaymentMethod;
 import com.Payment.Shop.constant.PaymentStatus;
 import com.Payment.Shop.dto.request.CreateOrderRequest;
 import com.Payment.Shop.dto.request.ProductVariantDto;
+import com.Payment.Shop.dto.response.AdminOrderResponse;
 import com.Payment.Shop.dto.response.BaseOrderResponse;
+import com.Payment.Shop.dto.response.AdminOrderResponse;
 import com.Payment.Shop.entity.Order;
 import com.Payment.Shop.entity.OrderItem;
 import com.Payment.Shop.entity.ProductVariant;
@@ -76,20 +78,28 @@ public class BaseOrderService implements IOrderService {
 
 
         // Create order
+        PaymentMethod method = createOrderRequest.getPaymentMethod();
+        PaymentStatus paymentStatus;
+
+        if (method == PaymentMethod.COD) {
+            paymentStatus = PaymentStatus.UNPAID;
+        } else {
+            paymentStatus = PaymentStatus.PAYMENT_PROCESSING;
+        }
+
         Order order = Order.builder()
                 .address(createOrderRequest.getAddress())
                 .note(createOrderRequest.getNote())
-                .email(createOrderRequest.getEmail()) // thêm email
+                .email(createOrderRequest.getEmail())
                 .phone(createOrderRequest.getPhone())
                 .receiverName(createOrderRequest.getReceiverName())
-                .paymentMethod(createOrderRequest.getPaymentMethod())
+                .paymentMethod(method)
                 .shippingFee(createOrderRequest.getShippingFee())
                 .totalAmount(createOrderRequest.getTotalAmount())
                 .user(curUser)
                 .orderStatus(OrderStatus.PENDING)
-                .paymentStatus(PaymentStatus.PAYMENT_PROCESSING)
+                .paymentStatus(paymentStatus)
                 .build();
-
 
 
 //        productVariants.forEach(productVariant -> {
@@ -135,13 +145,28 @@ public class BaseOrderService implements IOrderService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markOrderAsPaid(Long orderId, PaymentMethod paymentMethod) {
-        Order order = orderRepository.findById(orderId).
-                orElseThrow(() -> new IllegalArgumentException("Order not found"));
+    // public void markOrderAsPaid(Long orderId, PaymentMethod paymentMethod) {
+    //     Order order = orderRepository.findById(orderId).
+    //             orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        order.setPaymentStatus(PaymentStatus.PAYMENT_COMPLETED);
-        order.setOrderStatus(OrderStatus.PAID);
-        order.setPaymentMethod(paymentMethod);
+    //     order.setPaymentStatus(PaymentStatus.PAYMENT_COMPLETED);
+    //     order.setOrderStatus(OrderStatus.PENDING);
+    //     order.setPaymentMethod(paymentMethod);
+    //     orderRepository.save(order);
+    // }
+    public void markOrderAsPaid(
+            Long orderId,
+            PaymentMethod method
+    ) {
+
+        Order order = orderRepository
+            .findById(orderId)
+            .orElseThrow();
+
+        order.setPaymentStatus(
+            PaymentStatus.PAYMENT_COMPLETED
+        );
+
         orderRepository.save(order);
     }
 
@@ -245,7 +270,7 @@ public class BaseOrderService implements IOrderService {
     }
  
     @Override
-    public List<BaseOrderResponse> getAllOrders(String status) {
+    public List<AdminOrderResponse> getAllOrders(String status) {
         List<Order> orders;
         if (status != null && !status.isEmpty()) {
             orders = orderRepository.findByOrderStatus(OrderStatus.valueOf(status));
@@ -253,27 +278,41 @@ public class BaseOrderService implements IOrderService {
             orders = orderRepository.findAll();
         }
         return orders.stream()
-                .map(o -> modelMapper.map(o, BaseOrderResponse.class))
+                .map(o -> modelMapper.map(o, AdminOrderResponse.class))
                 .collect(Collectors.toList());
     }
  
     @Override
     @Transactional
-    public BaseOrderResponse updateOrderStatus(Long id, String status) {
+    public AdminOrderResponse updateOrderStatus(Long id, String status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
         order.setOrderStatus(OrderStatus.valueOf(status));
         Order saved = orderRepository.save(order);
-        return modelMapper.map(saved, BaseOrderResponse.class);
+        return modelMapper.map(saved, AdminOrderResponse.class);
     }
  
     @Override
     @Transactional
-    public void markOrderAsFailed(Long orderId, PaymentMethod paymentMethod) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
-        // Giữ PENDING để user có thể thanh toán lại
-        order.setPaymentStatus(PaymentStatus.PAYMENT_FAILED);
+    // public void markOrderAsFailed(Long orderId, PaymentMethod paymentMethod) {
+    //     Order order = orderRepository.findById(orderId)
+    //             .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+    //     //Vẫn đang giữ PENDING
+    //     order.setPaymentStatus(PaymentStatus.PAYMENT_FAILED);
+    //     orderRepository.save(order);
+    // }
+    public void markOrderAsFailed(
+            Long orderId,
+            PaymentMethod method
+    ) {
+
+        Order order = orderRepository
+            .findById(orderId)
+            .orElseThrow();
+
+        order.setPaymentStatus( PaymentStatus.PAYMENT_FAILED);
+        order.setOrderStatus(OrderStatus.CANCELED);
+
         orderRepository.save(order);
-    }
+}
 }
