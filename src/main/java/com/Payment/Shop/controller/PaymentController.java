@@ -69,13 +69,9 @@ public void vnpayReturn(
 
     log.info("Return params {}", params);
 
-    IpnResponse ipnResponse =
-            ipnHandlerFactory.processIpn(
-                    PaymentMethod.VNPAY,
-                    params
-            );
+    String responseCode = params.get("vnp_ResponseCode");
 
-    if ("00".equals(ipnResponse.getResponseCode())) {
+    if ("00".equals(responseCode)) {
 
         response.sendRedirect("/pages/orders.html?status=success");
 

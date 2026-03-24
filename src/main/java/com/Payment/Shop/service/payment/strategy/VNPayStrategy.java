@@ -35,6 +35,7 @@ public class VNPayStrategy extends PaymentStrategy {
         var txnRef = String.valueOf(request.getOrderId());                       // 2. orderId
         var returnUrl = buildReturnUrl(txnRef);                 // 3. FE redirect by returnUrl
 
+        System.out.println("RETURN URL = " + returnUrl);
         var ipAddress = request.getIpAddress();
         var orderInfo = buildPaymentDetail(request);
 
