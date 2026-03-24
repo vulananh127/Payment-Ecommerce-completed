@@ -42,7 +42,7 @@ public class VNPayStrategy extends PaymentStrategy {
 
         params.put(VNPayParams.TXN_REF, txnRef);
         params.put(VNPayParams.RETURN_URL, returnUrl);
-        params.put("vnp_IpnUrl", vnPayConfig.getIpnUrl());
+        // params.put("vnp_IpnUrl", vnPayConfig.getIpnUrl());
 
         params.put(VNPayParams.IP_ADDRESS, ipAddress);
         params.put(VNPayParams.ORDER_INFO, orderInfo);
