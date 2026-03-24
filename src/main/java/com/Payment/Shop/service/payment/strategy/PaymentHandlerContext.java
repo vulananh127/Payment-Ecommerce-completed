@@ -25,7 +25,7 @@ public class PaymentHandlerContext {
     private PaymentStrategy getPaymentStrategy(PaymentMethod paymentMethod){
 
         return switch (paymentMethod) {
-            case CoD -> null;
+            case COD -> null;
             case VNPAY -> vnPayStrategy;
             case MOMO -> null;
             case BANKING -> null;
