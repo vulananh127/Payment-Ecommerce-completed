@@ -31,6 +31,9 @@ public class VNPayConfig {
     @Value("${payment.vnpay.return-url}")
     private String returnUrlFormat;
 
+    @Value("${payment.vnpay.ipn-url}")
+    private String ipnUrl;
+
     @Value("${payment.vnpay.timeout}")
     private Integer paymentTimeout;
 
