@@ -5,6 +5,7 @@ import com.Payment.Shop.entity.Address;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -25,11 +26,11 @@ public class CreateOrderRequest {
 
     private PaymentMethod paymentMethod;
 
-    private double totalAmount;
+    private BigDecimal  totalAmount;
 
     private List<Long> voucherIds;
 
-    private double shippingFee;
+    private BigDecimal  shippingFee;
 //
 //    @Getter
 //    @Setter

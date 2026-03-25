@@ -25,6 +25,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -80,10 +81,16 @@ public class BaseOrderService implements IOrderService {
         PaymentMethod method = createOrderRequest.getPaymentMethod();
         PaymentStatus paymentStatus;
         // tính totalAmount
-        double total = productVariants.stream()
-            .mapToDouble(p -> p.getPrice() * variantDtoMap.get(p.getId()).getQuantity())
-            .sum();
-
+        BigDecimal total = productVariants.stream()
+            .map(p -> 
+                BigDecimal.valueOf(p.getPrice())
+                .multiply(
+                    BigDecimal.valueOf(
+                        variantDtoMap.get(p.getId()).getQuantity()
+                    )
+                )
+            )
+         .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (method == PaymentMethod.COD) {
             paymentStatus = PaymentStatus.UNPAID;
         } else {

@@ -282,7 +282,7 @@ function addToCart(product, qty = 1, variantId = null) {
     return false;
   }
   const cart = getCart();
-  let price = product.price || 0;
+  let price = Number(product.price)|| 0;
   let image = product.imageUrl || "";
   let name = product.name;
   // ✅ nếu có variant
@@ -294,7 +294,7 @@ function addToCart(product, qty = 1, variantId = null) {
       );
 
     if (v) {
-      price = v.price;
+      price = Number(v.price);
     }
 
   }
@@ -339,7 +339,16 @@ function clearCart() {
   if (b) b.textContent = 0;
 }
 
-function getCartTotal() { return getCart().reduce((s, i) => s + i.price * i.qty, 0); }
+function getCartTotal() { return getCart().reduce((s, i) => {
+
+    const price = Number(i.price);
+    const qty = Number(i.qty);
+
+    return s + price * qty;
+
+  }, 0);
+}
+
 function getCartCount() { return getCart().length; }
 
 function buildOrderBody(formData, paymentMethod) {

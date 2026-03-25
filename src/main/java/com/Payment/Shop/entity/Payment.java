@@ -1,5 +1,7 @@
 package com.Payment.Shop.entity;
 
+import java.math.BigDecimal;
+
 import com.Payment.Shop.constant.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,14 +15,14 @@ import lombok.*;
 @NoArgsConstructor
 public class Payment {
 
-    @Id
+@Id
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;
 
     @Column(nullable = false)
     private PaymentMethod paymentMethod;
 
-    private double amount;
+    private BigDecimal  amount;
 
     private String transactionId;
 

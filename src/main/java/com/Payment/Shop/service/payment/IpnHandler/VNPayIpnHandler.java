@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Service
@@ -32,8 +33,12 @@ public class VNPayIpnHandler implements IpnHandler<IpnResponse> {
         SavePaymentRequest savePaymentRequest = new SavePaymentRequest();
         savePaymentRequest.setOrderId(orderId);
         savePaymentRequest.setPaymentMethod(PaymentMethod.VNPAY);
-        savePaymentRequest.setTotalAmount(Double.parseDouble(params.get(VNPayParams.AMOUNT)));
-        savePaymentRequest.setTransactionId(params.get(VNPayParams.TRANSACTION_NO));
+        savePaymentRequest.setTotalAmount(
+            new BigDecimal(
+                params.get(VNPayParams.AMOUNT)
+            ).divide(BigDecimal.valueOf(100))
+        );
+                savePaymentRequest.setTransactionId(params.get(VNPayParams.TRANSACTION_NO));
         savePaymentRequest.setCreatedAt(params.get(VNPayParams.PAY_DATE));
         return savePaymentRequest;
 

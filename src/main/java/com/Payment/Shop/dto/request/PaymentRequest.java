@@ -1,5 +1,7 @@
 package com.Payment.Shop.dto.request;
 
+import java.math.BigDecimal;
+
 import com.Payment.Shop.constant.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -14,7 +16,7 @@ public class PaymentRequest {
     @NotNull(message = "Order Id is required")
     protected Long orderId;
 
-    protected double totalAmount;
+    protected BigDecimal  totalAmount;
 
     @NotNull(message = "Payment method is required")
     protected PaymentMethod paymentMethod;

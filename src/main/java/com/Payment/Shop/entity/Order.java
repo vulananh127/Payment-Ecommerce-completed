@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class Order {
 
     private String receiverName;
 
-    private double totalAmount;
+    private BigDecimal  totalAmount;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
@@ -43,7 +44,7 @@ public class Order {
 
     private String note;
 
-    private double shippingFee;
+    private BigDecimal  shippingFee;
 
     private Instant createdAt;
 

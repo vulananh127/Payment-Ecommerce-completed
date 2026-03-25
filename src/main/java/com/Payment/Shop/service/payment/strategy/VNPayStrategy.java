@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -31,7 +32,11 @@ public class VNPayStrategy extends PaymentStrategy {
     @Override
     public VNPayResponse processPayment(PaymentRequest request) {
 
-        Long amount = (long) (request.getTotalAmount() * VNPayConfig.DEFAULT_MULTIPLIER);  // 1. amount * 100
+        // Long amount = (long) (request.getTotalAmount() * VNPayConfig.DEFAULT_MULTIPLIER);  // 1. amount * 100
+        Long amount = request
+        .getTotalAmount()
+        .multiply(BigDecimal.valueOf(VNPayConfig.DEFAULT_MULTIPLIER))
+        .longValue();
         // var txnRef = String.valueOf(request.getOrderId());                       // 2. orderId
         var txnRef = request.getOrderId() + "_" + System.currentTimeMillis();
         var returnUrl = buildReturnUrl(txnRef);                 // 3. FE redirect by returnUrl
