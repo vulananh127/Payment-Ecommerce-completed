@@ -11,10 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class StoreProductVariantId {
     private Long storeId;
-
     private Long variantId;
-
     public StoreProductVariantId() {
-
     }
 }

@@ -12,8 +12,6 @@ import lombok.Setter;
 public class OrderVoucherId {
     private Long orderId;
     private Long voucherId;
-
     public OrderVoucherId() {
-
     }
 }

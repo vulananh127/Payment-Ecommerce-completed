@@ -11,32 +11,22 @@ import java.time.Instant;
 @Getter
 @Setter
 public class Voucher {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
     private String code;
-
     private double discountPercent;
-
     private String description;
-
     private boolean isActive;
-
     private Instant createdAt;
-
     private Instant updatedAt;
-
     @PrePersist
     public void prePersist() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
     }
-
     @PreUpdate
     public void preUpdate() {
         updatedAt = Instant.now();
     }
-
 }

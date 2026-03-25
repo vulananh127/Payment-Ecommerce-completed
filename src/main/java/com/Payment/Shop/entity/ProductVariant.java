@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,21 +22,15 @@ public class ProductVariant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
     private String sku;
-
     private int stock;
-
-    private double price;
-
+    private BigDecimal price;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
-
     @Builder.Default
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "productVariant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ProductVariantOption> productVariantOptions = new HashSet<>();
-
     public ProductVariant(Long id){
         this.id = id;
     }

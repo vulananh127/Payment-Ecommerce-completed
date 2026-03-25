@@ -3,6 +3,7 @@ package com.Payment.Shop.dto.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -12,7 +13,7 @@ public class CreateProductRequest {
     private String description;
     // private double basePrice;
     // private double discountPercent;
-    private Double price;
+    private BigDecimal price;
     private Integer stockQuantity;
     private String imageUrl;
     private Long categoryId;

@@ -12,31 +12,14 @@ import java.util.List;
 @Setter
 public class CreateOrderRequest {
 
-    private List<ProductVariantDto> productVariants;
-
+    private List<OrderItemRequest> productVariants;
     private Address address;
-
     private String note;
-
     private String receiverName;
-
     private String email; // thêm email
-
     private String phone;
-
     private PaymentMethod paymentMethod;
-
     private BigDecimal  totalAmount;
-
     private List<Long> voucherIds;
-
     private BigDecimal  shippingFee;
-//
-//    @Getter
-//    @Setter
-//    public static class ProductVariantRequest {
-//
-//    }
-
-
 }

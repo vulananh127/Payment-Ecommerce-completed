@@ -1,5 +1,7 @@
 package com.Payment.Shop.dto.response;
 
+import java.math.BigDecimal;
+
 import com.Payment.Shop.constant.OrderStatus;
 import com.Payment.Shop.constant.PaymentMethod;
 import com.Payment.Shop.entity.Address;
@@ -28,6 +30,6 @@ public class BaseOrderResponse {
     
     protected OrderStatus orderStatus;
 
-    protected double totalAmount;
+    protected BigDecimal totalAmount;
 
 }

@@ -4,7 +4,7 @@ import com.Payment.Shop.constant.OrderStatus;
 import com.Payment.Shop.constant.PaymentMethod;
 import com.Payment.Shop.constant.PaymentStatus;
 import com.Payment.Shop.dto.request.CreateOrderRequest;
-import com.Payment.Shop.dto.request.ProductVariantDto;
+import com.Payment.Shop.dto.request.OrderItemRequest;
 import com.Payment.Shop.dto.response.AdminOrderResponse;
 import com.Payment.Shop.dto.response.BaseOrderResponse;
 import com.Payment.Shop.dto.response.AdminOrderResponse;
@@ -57,7 +57,7 @@ public class BaseOrderService implements IOrderService {
         User curUser = new User();
         curUser.setId(Long.parseLong(userId));
 
-        Map<Long, ProductVariantDto> variantDtoMap = createOrderRequest.getProductVariants().stream()
+        Map<Long, OrderItemRequest> variantDtoMap = createOrderRequest.getProductVariants().stream()
                 .collect(Collectors.toMap(
                         productVariant -> productVariant.getVariantId(),
                         productVariant -> productVariant
@@ -85,7 +85,7 @@ public class BaseOrderService implements IOrderService {
 
         for (ProductVariant pv : productVariants) {
 
-            ProductVariantDto dto =
+            OrderItemRequest dto =
                     variantDtoMap.get(pv.getId());
 
             if (dto == null) {
@@ -94,8 +94,7 @@ public class BaseOrderService implements IOrderService {
                 );
             }
 
-            BigDecimal price =
-                    BigDecimal.valueOf(pv.getPrice());
+            BigDecimal price = pv.getPrice();
 
             BigDecimal qty =
                     BigDecimal.valueOf(dto.getQuantity());
@@ -128,25 +127,27 @@ public class BaseOrderService implements IOrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        List<OrderItem> orderItems = productVariants.stream().map(productVariant -> {
-            ProductVariantDto dto =
-                variantDtoMap.get(productVariant.getId());
+        List<OrderItem> orderItems = productVariants.stream()
+        .map(productVariant -> {
 
-        if (dto == null) {
-            throw new RuntimeException(
-                    "Variant mismatch: " + productVariant.getId()
-            );
-        }
+            OrderItemRequest dto =
+                    variantDtoMap.get(productVariant.getId());
 
-        Integer qty = dto.getQuantity();
+            if (dto == null) {
+                throw new RuntimeException(
+                        "Variant mismatch: " + productVariant.getId()
+                );
+            }
 
-            BigDecimal price = BigDecimal.valueOf(
-                    productVariant.getPrice()
-            );
+            Integer qty = dto.getQuantity();
 
-            BigDecimal totalPrice = price.multiply(
-                    BigDecimal.valueOf(qty)
-            );
+            BigDecimal price =
+                    productVariant.getPrice();
+
+            BigDecimal totalPrice =
+                    price.multiply(
+                            BigDecimal.valueOf(qty)
+                    );
 
             return OrderItem.builder()
                     .order(savedOrder)
@@ -156,12 +157,13 @@ public class BaseOrderService implements IOrderService {
                             )
                     )
                     .quantity(qty)
-                    .unitPriceAfterDiscount(price)
+                    .unitPrice(price)
                     .totalPrice(totalPrice)
                     .build();
 
-        }).toList();
-
+        })
+        .toList();
+        
         orderItemRepository.saveAll(orderItems);
 
         // Update stock
@@ -197,10 +199,10 @@ public class BaseOrderService implements IOrderService {
 
     }
 
-    private void validateStock(List<ProductVariant> productVariants, Map<Long, ProductVariantDto> variantDtoMap) {
+    private void validateStock(List<ProductVariant> productVariants, Map<Long, OrderItemRequest> variantDtoMap) {
 
         for(ProductVariant productVariant : productVariants){
-            ProductVariantDto dto =
+            OrderItemRequest dto =
         variantDtoMap.get(productVariant.getId());
 
 Integer requestedQuantity =
@@ -214,7 +216,7 @@ Integer requestedQuantity =
         }
     }
 
-    private void updateStock( List<ProductVariant> productVariants, Map<Long, ProductVariantDto> variantDtoMap) {
+    private void updateStock( List<ProductVariant> productVariants, Map<Long, OrderItemRequest> variantDtoMap) {
         for(ProductVariant productVariant : productVariants){
             Integer requestedQuantity = variantDtoMap.get(productVariant.getId()).getQuantity();
             int newStock = productVariant.getStock() - requestedQuantity;
@@ -227,9 +229,9 @@ Integer requestedQuantity =
     }
 
     // Optimistic lock
-    private void updateStockOptimistic( List<ProductVariant> productVariants, Map<Long, ProductVariantDto> variantDtoMap) {
+    private void updateStockOptimistic( List<ProductVariant> productVariants, Map<Long, OrderItemRequest> variantDtoMap) {
         for(ProductVariant productVariant : productVariants){
-            ProductVariantDto dto =
+            OrderItemRequest dto =
             variantDtoMap.get(productVariant.getId());
 
     Integer requestedQuantity =

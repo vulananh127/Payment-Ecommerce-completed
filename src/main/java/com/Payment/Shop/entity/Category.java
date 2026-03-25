@@ -13,12 +13,9 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
     @Column(unique = true)
     private String categoryName;
-
     private Instant createdAt;
-
     @PrePersist
     public void prePersist() {
         createdAt = Instant.now();

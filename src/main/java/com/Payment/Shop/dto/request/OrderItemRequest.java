@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ProductVariantDto {
+public class OrderItemRequest {
     private Long variantId;
     private Integer quantity;
 }

@@ -9,20 +9,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class StoreProductVariant {
-
     @EmbeddedId
     private StoreProductVariantId id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("storeId")
     @JoinColumn(name = "store_id")
     private Store store;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("variantId")
     @JoinColumn(name = "product_variant_id")
     private ProductVariant productVariant;
-
     private Long stock;
-
 }

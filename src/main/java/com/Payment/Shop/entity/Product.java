@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,7 +19,6 @@ import java.util.Set;
 @Builder
 @Table(name = "products")
 public class Product {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -32,21 +30,14 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
-    
     @Builder.Default
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    
     private Set<ProductVariant> productVariants = new HashSet<>();
-    // public Product() {
-
-    // }
-
     @PrePersist
     public void prePersist() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
     }
-
     @PreUpdate
     public void preUpdate() {
         updatedAt = Instant.now();

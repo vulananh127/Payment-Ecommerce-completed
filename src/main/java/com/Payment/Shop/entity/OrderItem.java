@@ -14,31 +14,22 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 public class OrderItem {
-
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_item_seq")
     @SequenceGenerator(name = "order_item_seq", sequenceName = "order_item_sequence", allocationSize = 50)
     private Long id;
-
     private int quantity;
-
-    private BigDecimal unitPriceAfterDiscount;
-
+    private BigDecimal unitPrice;
     private BigDecimal totalPrice;
-
+    // Lưu lại lịch sử khi update Product variant
+    private String productName;
+    private String variantName;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_variant_id")
     private ProductVariant productVariant;
-
     public OrderItem() {
-
     }
 }

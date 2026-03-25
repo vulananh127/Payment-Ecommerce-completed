@@ -18,19 +18,12 @@ public class ProductVariantOption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String attribute;
-
     private String value;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_variant_id")
     private ProductVariant productVariant;
-
     public ProductVariantOption(String attribute, String value){
         this.attribute = attribute;
         this.value = value;
     }
-
-    // public ProductVariantOption() {
-
-    // }
 }

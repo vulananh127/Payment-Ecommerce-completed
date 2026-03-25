@@ -5,6 +5,7 @@ import com.Payment.Shop.dto.request.PaymentRequest;
 import com.Payment.Shop.dto.request.SavePaymentRequest;
 import com.Payment.Shop.dto.response.BasePaymentResponse;
 import com.Payment.Shop.entity.Payment;
+import com.Payment.Shop.entity.Order;
 import com.Payment.Shop.exception.PaymentException;
 import com.Payment.Shop.repository.PaymentRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +33,13 @@ public abstract class PaymentStrategy {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void savePayment(SavePaymentRequest paymentRequest) {
 
+        Order order = new Order(paymentRequest.getOrderId());
+        // dùng constructor bạn đã có trong Order
+
         Payment payment = Payment.builder()
                 .paymentMethod(paymentRequest.getPaymentMethod())
-                .orderId(paymentRequest.getOrderId())
-                .createdAt(paymentRequest.getCreatedAt())
+                .order(order)
+                // .createdAt(paymentRequest.getCreatedAt())
                 .amount(paymentRequest.getTotalAmount())
                 .build();
 

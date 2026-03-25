@@ -51,53 +51,6 @@ public class ProductServiceImpl implements IProductService {
         this.categoryRepository = categoryRepository;
     }
 
-    // @Override
-    // @Transactional
-//     public BaseProductResponse createProduct(CreateProductRequest request) {
-//         // Fetch category từ DB
-//         Category category = categoryRepository.findById(request.getCategoryId())
-//                 .orElseThrow(() -> new RuntimeException("Category not found: " + request.getCategoryId()));
-
-//         // Build Product
-//         Product product = new Product();
-//         product.setName(request.getName());
-//         product.setDescription(request.getDescription());
-//         product.setCategory(category);
-//         product.setImageUrl(request.getImageUrl());
-//         product.setProductVariants(new ArrayList<>());
-
-//         entityManager.persist(product);
-
-//         // Build variants nếu có
-//         if (request.getVariants() != null && !request.getVariants().isEmpty()) {
-//             for (var variantReq : request.getVariants()) {
-//                 ProductVariant variant = new ProductVariant();
-//                 variant.setSku(variantReq.getSku());
-//                 variant.setStock(variantReq.getStockQuantity());
-//                 variant.setPrice(variantReq.getPrice());
-//                 variant.setProduct(product);
-//                 variant.setProductVariantOptions(new ArrayList<>());
-
-//                 if (variantReq.getAttributes() != null) {
-//                     for (var entry : variantReq.getAttributes().entrySet()) {
-//                         ProductVariantOption option = new ProductVariantOption(entry.getKey(), entry.getValue());
-//                         option.setProductVariant(variant);
-//                         variant.getProductVariantOptions().add(option);
-//                     }
-//                 }
-
-//                 entityManager.persist(variant);
-//                 variant.getProductVariantOptions().forEach(entityManager::persist);
-//                 product.getProductVariants().add(variant);
-//             }
-//         }
-
-//         entityManager.flush();
-//         entityManager.clear();
-
-//         return modelMapper.map(product, BaseProductResponse.class);
-//     }
-
     @Override
     public List<BaseProductResponse> getAllProducts(String name, Long categoryId) {
     if (name != null && !name.trim().isEmpty()) {
@@ -106,13 +59,8 @@ public class ProductServiceImpl implements IProductService {
         name = null;
     }
 
-    System.out.println("==== getAllProducts called ====");
-System.out.println("name parameter: " + name + " (class: " + (name != null ? name.getClass() : "null") + ")");
-System.out.println("categoryId parameter: " + categoryId + " (class: " + (categoryId != null ? categoryId.getClass() : "null") + ")");
-
     List<Product> products = productRepository.findAllWithFilters(name, categoryId);
 
-    System.out.println("Number of products fetched: " + products.size());
     products.forEach(p -> {
         System.out.println("Product id=" + p.getId() + ", name=" + p.getName());
     });
@@ -121,58 +69,6 @@ System.out.println("categoryId parameter: " + categoryId + " (class: " + (catego
         .map(this::mapProduct)
         .toList();
 }
-
-
-    // @Override
-    // public BaseProductResponse getProductById(Long id) {
-
-    //     Product product =
-    //             productRepository.findById(id)
-    //             .orElseThrow();
-
-    //     BaseProductResponse res =
-    //             modelMapper.map(
-    //                     product,
-    //                     BaseProductResponse.class
-    //             );
-
-    //     List<ProductVariantResponse> list =
-    //             product.getProductVariants()
-    //                     .stream()
-    //                     .map(v -> {
-
-    //                         ProductVariantResponse r =
-    //                                 new ProductVariantResponse();
-
-    //                         r.setSku(v.getSku());
-
-    //                         r.setPrice(v.getPrice());
-
-    //                         r.setStockQuantity(
-    //                                 v.getStock()
-    //                         );
-
-    //                         Map<String,String> attrs =
-    //                                 v.getProductVariantOptions()
-    //                                 .stream()
-    //                                 .collect(
-    //                                     Collectors.toMap(
-    //                                     o -> o.getAttribute(),
-    //                                     o -> o.getValue()
-    //                                     )
-    //                                 );
-
-    //                         r.setAttributes(attrs);
-
-    //                         return r;
-
-    //                     })
-    //                     .toList();
-
-    //     res.setVariants(list);
-
-    //     return res;
-    // }
 
     @Override
 public BaseProductResponse getProductById(Long id) {
@@ -184,133 +80,122 @@ public BaseProductResponse getProductById(Long id) {
     return mapProduct(product);
 }
 
+     @Override
+    @Transactional
+    public BaseProductResponse createProduct(CreateProductRequest request) {
+
+    Category category = categoryRepository.findById(request.getCategoryId())
+            .orElseThrow(() -> new RuntimeException("Category not found"));
+
+    Product product = new Product();
+    product.setName(request.getName());
+    product.setDescription(request.getDescription());
+    product.setImageUrl(request.getImageUrl());
+    product.setCategory(category);
+
+    product.setProductVariants(new HashSet<>());
+    // ===== no variant =====
+    if (request.getVariants() == null || request.getVariants().isEmpty()) {
+        ProductVariant variant = new ProductVariant();
+        variant.setSku("DEFAULT");
+        variant.setPrice(request.getPrice());
+        variant.setStock(request.getStockQuantity());
+        variant.setProduct(product);
+        variant.setProductVariantOptions(new HashSet<>());
+        product.getProductVariants().add(variant);
+    }
+    // ===== has variant =====
+    else {
+        for (CreateProductVariantRequest v : request.getVariants()) {
+            ProductVariant variant = new ProductVariant();
+            variant.setSku(generateSku(v.getAttributes()));
+            variant.setPrice(v.getPrice());
+            variant.setStock(v.getStockQuantity());
+            variant.setProduct(product);
+            variant.setProductVariantOptions(new HashSet<>());
+            if (v.getAttributes() != null) {
+                for (var e : v.getAttributes().entrySet()) {
+                    ProductVariantOption opt =
+                            new ProductVariantOption(
+                                    e.getKey(),
+                                    e.getValue()
+                            );
+                    opt.setProductVariant(variant);
+                    variant.getProductVariantOptions().add(opt);
+                }
+            }
+            product.getProductVariants().add(variant);
+        }
+    }
+    Product saved = productRepository.save(product);
+    return mapProduct(saved);
+}
+    
     @Override
     @Transactional
     public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) {
+
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found: " + id));
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setImageUrl(request.getImageUrl());
 
         if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found: " + request.getCategoryId()));
+
+            Category category = categoryRepository.findById(
+                    request.getCategoryId()
+            ).orElseThrow();
+
             product.setCategory(category);
         }
 
-        // Cập nhật variants nếu có
-        if (request.getVariants() != null && !request.getVariants().isEmpty()) {
-            // Xóa variants cũ
-            product.getProductVariants().clear();
-            productRepository.save(product); // flush delete trước
+        if (request.getVariants() != null) {
 
-            // Thêm variants mới
-            for (var variantReq : request.getVariants()) {
+            product.getProductVariants().clear();
+
+            for (CreateProductVariantRequest v : request.getVariants()) {
+
                 ProductVariant variant = new ProductVariant();
-                variant.setSku(variantReq.getSku());
-                variant.setStock(variantReq.getStockQuantity());
-                variant.setPrice(variantReq.getPrice());
+
+                variant.setSku(generateSku(v.getAttributes()));
+                variant.setPrice(v.getPrice());
+                variant.setStock(v.getStockQuantity());
+
                 variant.setProduct(product);
                 variant.setProductVariantOptions(new HashSet<>());
 
-                if (variantReq.getAttributes() != null) {
-                    for (var entry : variantReq.getAttributes().entrySet()) {
-                        ProductVariantOption option = new ProductVariantOption(entry.getKey(), entry.getValue());
-                        option.setProductVariant(variant);
-                        variant.getProductVariantOptions().add(option);
+                if (v.getAttributes() != null) {
+
+                    for (var e : v.getAttributes().entrySet()) {
+
+                        ProductVariantOption opt =
+                                new ProductVariantOption(
+                                        e.getKey(),
+                                        e.getValue()
+                                );
+
+                        opt.setProductVariant(variant);
+
+                        variant.getProductVariantOptions().add(opt);
                     }
                 }
+
                 product.getProductVariants().add(variant);
             }
         }
 
         Product saved = productRepository.save(product);
-        return modelMapper.map(saved, BaseProductResponse.class);
+        return mapProduct(saved);
     }
 
-    
-    @Override
-    @Transactional
-
-public BaseProductResponse createProduct(CreateProductRequest request) {
-
-    Category category = categoryRepository.findById(request.getCategoryId())
-            .orElseThrow(() -> new RuntimeException("Category not found"));
-
-    Product product = Product.builder()
-            .name(request.getName())
-            .description(request.getDescription())
-            .imageUrl(request.getImageUrl())
-            .category(category)
-            .build();
-
-
-    // =========================
-    // KHÔNG CÓ VARIANT
-    // =========================
-    if (request.getVariants() == null || request.getVariants().isEmpty()) {
-
-        ProductVariant variant = new ProductVariant();
-
-        variant.setSku("DEFAULT");
-
-        variant.setPrice(request.getPrice());
-        variant.setStock(request.getStockQuantity());
-
-        variant.setProduct(product);
-        product.getProductVariants().add(variant);
-
-    }
-
-    // =========================
-    // CÓ VARIANT
-    // =========================
-    else {
-
-        for (CreateProductVariantRequest v : request.getVariants()) {
-
-            ProductVariant variant = new ProductVariant();
-
-            String sku = generateSku(v.getAttributes());
-
-            variant.setSku(sku);
-            variant.setPrice(v.getPrice());
-            variant.setStock(v.getStockQuantity());
-
-            variant.setProduct(product);
-            product.getProductVariants().add(variant);
-
-
-            if (v.getAttributes() != null) {
-
-                for (var e : v.getAttributes().entrySet()) {
-
-                    ProductVariantOption opt =
-                            new ProductVariantOption(
-                                    e.getKey(),
-                                    e.getValue()
-                            );
-
-                    opt.setProductVariant(variant);
-                    variant.getProductVariantOptions().add(opt);
-                }
-            }
-        }
-    }
-
-    Product saved = productRepository.save(product);
-
-    return modelMapper.map(saved, BaseProductResponse.class);
-}
+   
 
     private String generateSku(Map<String, String> attrs) {
-
     if (attrs == null || attrs.isEmpty()) {
         return "DEFAULT";
     }
-
     return attrs.values()
             .stream()
             .map(v -> v.toUpperCase().replace(" ", ""))
@@ -318,90 +203,80 @@ public BaseProductResponse createProduct(CreateProductRequest request) {
 }
 
     private BaseProductResponse mapProduct(Product product) {
-
-    BaseProductResponse res = new BaseProductResponse();
-
-    res.setId(product.getId());
-    res.setName(product.getName());
-    res.setDescription(product.getDescription());
-    res.setImageUrl(product.getImageUrl());
-
-    // ===== category =====
-
-    if (product.getCategory() != null) {
-
-        CategoryResponse c = new CategoryResponse();
-
-        c.setId(product.getCategory().getId());
-        c.setCategoryName(
-                product.getCategory().getCategoryName()
-        );
-
-        res.setCategory(c);
-    }
-
-    // ===== variants =====
-
-    if (product.getProductVariants() != null) {
-
-        List<ProductVariantResponse> list =
-                product.getProductVariants()
-                        .stream()
-                        .map(v -> {
-
-                            ProductVariantResponse r =
-                                    new ProductVariantResponse();
-
-                            r.setId(v.getId());
-
-                            r.setSku(v.getSku());
-
-                            r.setPrice(v.getPrice());
-
-                            r.setStockQuantity(
-                                    v.getStock()
-                            );
-
-                            Map<String, String> attrs =
-                                    v.getProductVariantOptions()
-                                            .stream()
-                                            .collect(
-                                                    Collectors.toMap(
-                                                            o -> o.getAttribute(),
-                                                            o -> o.getValue()
-                                                    )
-                                            );
-
-                            r.setAttributes(attrs);
-
-                            return r;
-
-                        })
-                        .toList();
-
-        res.setVariants(list);
-
-        // ===== price + stock lấy từ variant đầu =====
-
-        if (!product.getProductVariants().isEmpty()) {
-
-            List<ProductVariant> list1 =
-                new ArrayList<>(product.getProductVariants());
-
-            ProductVariant v = list1.get(0);
-            // ProductVariant v =
-            //         product.getProductVariants().get(0);
-
-            res.setPrice(v.getPrice());
-
-            res.setStockQuantity(
-                    v.getStock()
+        BaseProductResponse res = new BaseProductResponse();
+        res.setId(product.getId());
+        res.setName(product.getName());
+        res.setDescription(product.getDescription());
+        res.setImageUrl(product.getImageUrl());
+        // ===== category =====
+        if (product.getCategory() != null) {
+            CategoryResponse c = new CategoryResponse();
+            c.setId(product.getCategory().getId());
+            c.setCategoryName(
+                    product.getCategory().getCategoryName()
             );
+            res.setCategory(c);
         }
-    }
+        // ===== variants =====
+        if (product.getProductVariants() != null) {
+            List<ProductVariantResponse> list =
+                    product.getProductVariants()
+                            .stream()
+                            .map(v -> {
 
-    return res;
-}
+                                ProductVariantResponse r =
+                                        new ProductVariantResponse();
+
+                                r.setId(v.getId());
+
+                                r.setSku(v.getSku());
+
+                                r.setPrice(v.getPrice());
+
+                                r.setStockQuantity(
+                                        v.getStock()
+                                );
+
+                                Map<String, String> attrs =
+                                        v.getProductVariantOptions()
+                                                .stream()
+                                                .collect(
+                                                        Collectors.toMap(
+                                                                o -> o.getAttribute(),
+                                                                o -> o.getValue()
+                                                        )
+                                                );
+
+                                r.setAttributes(attrs);
+
+                                return r;
+
+                            })
+                            .toList();
+
+            res.setVariants(list);
+
+            // ===== price + stock lấy từ variant đầu =====
+
+            if (!product.getProductVariants().isEmpty()) {
+
+                List<ProductVariant> list1 =
+                    new ArrayList<>(product.getProductVariants());
+
+                ProductVariant v = list1.get(0);
+                // ProductVariant v =
+                //         product.getProductVariants().get(0);
+
+                res.setPrice(v.getPrice());
+
+                res.setStockQuantity(
+                        v.getStock()
+                );
+            }
+        }
+
+        return res;
+    }
 
     @Override
     @Transactional

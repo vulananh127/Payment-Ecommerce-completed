@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class BaseProductResponse {
 
     protected String imageUrl;
 
-    protected Double price;
+    protected BigDecimal price;
     protected Integer stockQuantity;
 
     protected Instant createdAt;
