@@ -82,22 +82,4 @@ public void vnpayReturn(
     }
 }
 
-    @GetMapping("/stripe-callback")
-    void processStripeSuccess(@RequestParam Map<String, String> params, HttpServletRequest request, HttpServletResponse response) {
-        log.info("[Stripe] Params: {}", params);
-
-        try{
-            Boolean success = ipnHandlerFactory.processIpn(PaymentMethod.STRIPE, params);
-
-            if(success.equals(Boolean.TRUE)){
-                response.sendRedirect(frontendUrl + "/payment?success=true");
-            }else {
-                response.sendRedirect(frontendUrl + "/payment?success=false");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-
-    }
 }

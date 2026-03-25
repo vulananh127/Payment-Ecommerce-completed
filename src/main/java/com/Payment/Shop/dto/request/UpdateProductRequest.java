@@ -19,13 +19,6 @@ public class UpdateProductRequest {
 
     private String description;
 
-    @NotNull(message = "Base price must not be null")
-    @Min(value = 0, message = "Base price must be >= 0")
-    private Double basePrice;
-
-    @Min(value = 0, message = "Discount must be >= 0")
-    private Double discountPercent = 0.0;
-
     private Long categoryId;
 
     private String imageUrl;

@@ -1,5 +1,6 @@
 package com.Payment.Shop.dto.response;
 
+import com.Payment.Shop.constant.OrderStatus;
 import com.Payment.Shop.constant.PaymentMethod;
 import com.Payment.Shop.entity.Address;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,6 +25,8 @@ public class BaseOrderResponse {
     protected String phone;
 
     protected PaymentMethod paymentMethod;
+    
+    protected OrderStatus orderStatus;
 
     protected double totalAmount;
 

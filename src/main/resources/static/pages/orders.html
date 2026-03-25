@@ -16,6 +16,10 @@
     .tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
     .tab { padding:0.5rem 1rem; border:1px solid #ddd; border-radius:20px; font-size:0.875rem; cursor:pointer; background:#fff; transition:all 0.2s; }
     .tab.active { background:#111; color:#fff; border-color:#111; }
+    .filters { display:flex; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items:center; }
+    .filters input { padding:0.6rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff; flex:1; min-width:200px; }
+    .filter-btn { padding:0.5rem 1rem; border:1px solid #ddd; border-radius:20px; font-size:0.8rem; cursor:pointer; background:#fff; transition:all 0.2s; }
+    .filter-btn.active { background:#111; color:#fff; border-color:#111; }
     .order-card { background:#fff; border-radius:12px; border:1px solid #eee; padding:1.25rem; margin-bottom:1rem; }
     .order-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem; }
     .order-id { font-size:0.875rem; color:#888; }
@@ -34,10 +38,10 @@
     .order-footer { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f0; padding-top:1rem; margin-top:0.75rem; flex-wrap:wrap; gap:0.5rem; }
     .order-total { font-weight:700; }
     .order-total span { color:#e53935; }
-    .action-btn { padding:0.4rem 1rem; border:1px solid #ddd; border-radius:6px; font-size:0.85rem; cursor:pointer; background:#fff; }
+    .action-btn { padding:0.4rem 1rem; border:1px solid #ddd; border-radius:6px; font-size:0.85rem; cursor:pointe; }
     .action-btn:hover { background:#f5f5f5; }
-    .cancel-btn { color:#e53935; border-color:#e53935; }
-    .cancel-btn:hover { background:#fff3f3; }
+    .cancel-btn { color: #fff; background: #e53935; border-color: #e53935;}
+    .cancel-btn:hover { background: #c62828; border-color: #c62828; }
     .retry-btn { color:#1565c0; border-color:#1565c0; }
     .retry-btn:hover { background:#e3f2fd; }
     .empty { text-align:center; padding:4rem; color:#888; }
@@ -49,17 +53,19 @@
   <a href="/" class="logo">Shop<span>VLA</span></a>
   <span id="userName" style="font-size:0.875rem; color:#555;"></span>
   <a href="/" class="nav-btn">← Tiếp tục mua sắm</a>
-  <a href="#" class="nav-btn" id="logoutBtn" style="color:#e53935; border-color:#e53935;">Đăng xuất</a>
+  <!-- <a href="#" class="nav-btn" id="logoutBtn" style="color:#e53935; border-color:#e53935;">Đăng xuất</a> -->
 </nav>
 
 <div class="main">
   <h1>Đơn hàng của tôi</h1>
-  <div class="tabs">
-    <button class="tab active" onclick="filterOrders(null, this)">Tất cả</button>
-    <button class="tab" onclick="filterOrders('PENDING', this)">Chờ xử lý</button>
-    <button class="tab" onclick="filterOrders('ON_DELIVERY', this)">Đang giao</button>
-    <button class="tab" onclick="filterOrders('DELIVERED', this)">Đã giao</button>
-    <button class="tab" onclick="filterOrders('CANCELED', this)">Đã hủy</button>
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Tìm theo tên, email, ID..." oninput="filterOrders()" />
+    <button class="filter-btn active" onclick="setStatus(null, this)">Tất cả</button>
+    <button class="filter-btn" onclick="setStatus('PENDING', this)">Chờ xử lý</button>
+    <button class="filter-btn" onclick="setStatus('CONFIRMED', this)">Đã xác nhận</button>
+    <button class="filter-btn" onclick="setStatus('ON_DELIVERY', this)">Đang giao</button>
+    <button class="filter-btn" onclick="setStatus('DELIVERED', this)">Đã giao</button>
+    <button class="filter-btn" onclick="setStatus('CANCELED', this)">Đã hủy</button>
   </div>
   <div id="orderList"><div class="loading">Đang tải đơn hàng...</div></div>
 </div>
@@ -89,13 +95,26 @@
 });
 
   let allOrders = [];
-  const statusLabel = { PENDING:'Chờ xử lý', ON_DELIVERY:'Đang giao', DELIVERED:'Đã giao', CANCELED:'Đã hủy' };
-  const payLabel = { PAYMENT_COMPLETED:'Đã TT', PAYMENT_PROCESSING:'Chờ TT', PAYMENT_FAILED:'TT thất bại' };
+  let statusFilter = null;
+  const statusLabel = { PENDING:'Chờ xử lý', CONFIRMED:'Đã xác nhận', ON_DELIVERY:'Đang giao', DELIVERED:'Đã giao', CANCELED:'Đã hủy' };
+  const payLabel = { UNPAID: 'COD', PAYMENT_COMPLETED:'Đã thanh toán', PAYMENT_PROCESSING:'Chờ thanh toán', PAYMENT_FAILED:'Thanh toán lỗi' };
 
-  function filterOrders(status, btn) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+   function setStatus(status, btn) {
+    statusFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    renderOrders(status ? allOrders.filter(o => o.orderStatus === status) : allOrders);
+    filterOrders();
+  }
+
+  function filterOrders() {
+    const kw = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = statusFilter ? allOrders.filter(o => o.orderStatus === statusFilter) : allOrders;
+    if (kw) filtered = filtered.filter(o =>
+      String(o.orderId).includes(kw) ||
+      (o.receiverName||'').toLowerCase().includes(kw) ||
+      (o.email||'').toLowerCase().includes(kw)
+    );
+    renderOrders(filtered);
   }
 
   function renderOrders(orders) {
@@ -107,7 +126,7 @@
       <div class="order-card">
         <div class="order-header">
           <div>
-            <span class="order-id">Đơn hàng #${o.id}</span>
+            <span class="order-id">Đơn hàng #${o.orderId}</span>
             <span class="pay-badge pay-${o.paymentStatus}">${payLabel[o.paymentStatus] || ''}</span>
           </div>
           <div style="display:flex; align-items:center; gap:0.75rem;">
@@ -126,43 +145,19 @@
         <div class="order-footer">
           <div class="order-total">Tổng: <span>${formatPrice(o.totalAmount)}</span></div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            ${o.paymentStatus === 'PAYMENT_FAILED' ? `<button class="action-btn retry-btn" onclick="retryPayment(${o.id}, ${o.totalAmount}, '${o.paymentMethod}')">Thanh toán lại</button>` : ''}
             ${o.orderStatus === 'PENDING' ? `<button class="action-btn cancel-btn" onclick="cancelOrder(${o.id})">Hủy đơn</button>` : ''}
+            <button class="action-btn" onclick="viewOrder(${o.orderId})">Chi tiết</button>
           </div>
         </div>
       </div>`).join('');
   }
 
-  async function cancelOrder(id) {
+  async function cancelOrder(orderId) {
     if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
     try {
-      await apiCancelOrder(id);
+      await apiCancelOrder(orderId);
       showToast('✓ Đã hủy đơn hàng');
       loadOrders();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  }
-
-  // async function retryPayment(orderId, amount, method) {
-  //   try {
-  //     const data = await apiCreatePayment({ orderId, paymentMethod: method, amount });
-  //     if (data.paymentUrl) window.location.href = data.paymentUrl;
-  //     else showToast('Không thể tạo link thanh toán', 'error');
-  //   } catch (err) {
-  //     showToast(err.message, 'error');
-  //   }
-  // }
-
-  async function retryPayment(orderId, amount, method) {
-    try {
-      const data = await apiCreatePayment({
-        orderId: orderId,
-        paymentMethod: method,
-        totalAmount: amount     
-      });
-      if (data.paymentUrl) window.location.href = data.paymentUrl;
-      else showToast('Không thể tạo link thanh toán', 'error');
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -176,6 +171,7 @@
       document.getElementById('orderList').innerHTML = '<div class="empty">Không thể tải đơn hàng.</div>';
     }
   }
+
 </script>
 </body>
 </html>

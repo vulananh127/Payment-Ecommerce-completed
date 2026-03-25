@@ -76,10 +76,13 @@ public class BaseOrderService implements IOrderService {
         // Validate stock
         this.validateStock(productVariants, variantDtoMap);
 
-
         // Create order
         PaymentMethod method = createOrderRequest.getPaymentMethod();
         PaymentStatus paymentStatus;
+        // tính totalAmount
+        double total = productVariants.stream()
+            .mapToDouble(p -> p.getPrice() * variantDtoMap.get(p.getId()).getQuantity())
+            .sum();
 
         if (method == PaymentMethod.COD) {
             paymentStatus = PaymentStatus.UNPAID;
@@ -95,23 +98,11 @@ public class BaseOrderService implements IOrderService {
                 .receiverName(createOrderRequest.getReceiverName())
                 .paymentMethod(method)
                 .shippingFee(createOrderRequest.getShippingFee())
-                .totalAmount(createOrderRequest.getTotalAmount())
+                .totalAmount(total)
                 .user(curUser)
                 .orderStatus(OrderStatus.PENDING)
                 .paymentStatus(paymentStatus)
                 .build();
-
-
-//        productVariants.forEach(productVariant -> {
-//            OrderItem orderItem = OrderItem.builder()
-//                    .order(order)
-//                    .productVariant(new ProductVariant(productVariant.getId()))
-//                    .quantity(variantDtoMap.get(productVariant.getId()).getQuantity())
-//                    .totalPrice(productVariant.getPrice() * variantDtoMap.get(productVariant.getId()).getQuantity())
-//                    .build();
-//
-//            order.addOrderItem(orderItem);
-//        });
 
 
         Order savedOrder = orderRepository.save(order);
@@ -128,13 +119,6 @@ public class BaseOrderService implements IOrderService {
 
         orderItemRepository.saveAll(orderItems);
 
-//        if(!savedOrder.getPaymentMethod().equals(PaymentMethod.CoD)){
-//            // Process payment
-//            BasePaymentResponse paymentResponse = processPayment(savedOrder);
-//            order.setPaymentStatus(PaymentStatus.PAYMENT_COMPLETED);
-//            orderRepository.save(order);
-//        }
-
         // Update stock
         this.updateStockOptimistic(productVariants, variantDtoMap);
 
@@ -145,15 +129,6 @@ public class BaseOrderService implements IOrderService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    // public void markOrderAsPaid(Long orderId, PaymentMethod paymentMethod) {
-    //     Order order = orderRepository.findById(orderId).
-    //             orElseThrow(() -> new IllegalArgumentException("Order not found"));
-
-    //     order.setPaymentStatus(PaymentStatus.PAYMENT_COMPLETED);
-    //     order.setOrderStatus(OrderStatus.PENDING);
-    //     order.setPaymentMethod(paymentMethod);
-    //     orderRepository.save(order);
-    // }
     public void markOrderAsPaid(
             Long orderId,
             PaymentMethod method
@@ -188,19 +163,6 @@ public class BaseOrderService implements IOrderService {
             }
         }
     }
-//    private BasePaymentResponse processPayment(Order order){
-//
-//        PaymentRequest paymentRequest = PaymentRequest.builder()
-//                .orderId(order.getId())
-//                .userId(order.getUser().getId())
-//                .totalAmount(order.getTotalAmount())
-//                .paymentMethod(order.getPaymentMethod())
-//                .build();
-//
-//        BasePaymentResponse paymentResponse = paymentHandlerContext.executePayment(paymentRequest);
-//
-//        return paymentResponse;
-//    }
 
     private void updateStock( List<ProductVariant> productVariants, Map<Long, ProductVariantDto> variantDtoMap) {
         for(ProductVariant productVariant : productVariants){
@@ -294,13 +256,6 @@ public class BaseOrderService implements IOrderService {
  
     @Override
     @Transactional
-    // public void markOrderAsFailed(Long orderId, PaymentMethod paymentMethod) {
-    //     Order order = orderRepository.findById(orderId)
-    //             .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
-    //     //Vẫn đang giữ PENDING
-    //     order.setPaymentStatus(PaymentStatus.PAYMENT_FAILED);
-    //     orderRepository.save(order);
-    // }
     public void markOrderAsFailed(
             Long orderId,
             PaymentMethod method

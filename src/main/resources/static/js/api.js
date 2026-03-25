@@ -267,25 +267,59 @@ function saveCart(cart) {
 }
 
 function addToCart(product, qty = 1, variantId = null) {
+
   if (!isLoggedIn()) {
     showToast('Vui lòng đăng nhập để thêm vào giỏ hàng', 'error');
+
     setTimeout(() => {
-      sessionStorage.setItem('redirectAfterLogin', window.location.href);
-      window.location.href = '/pages/login.html';
+      sessionStorage.setItem(
+        'redirectAfterLogin',
+        window.location.href
+      );
+      window.location.href =
+        '/pages/login.html';
     }, 1500);
     return false;
   }
   const cart = getCart();
+  let price = product.price || 0;
+  let image = product.imageUrl || "";
+  let name = product.name;
+  // ✅ nếu có variant
+  if (variantId && product.variants) {
+
+    const v =
+      product.variants.find(
+        x => x.id === variantId
+      );
+
+    if (v) {
+      price = v.price;
+    }
+
+  }
   const key = variantId || product.id;
-  const existing = cart.find(i => (i.variantId || i.id) === key);
+  const existing =
+    cart.find(
+      i => (i.variantId || i.id) === key
+    );
   if (existing) {
     existing.qty += qty;
   } else {
-    const price = product.basePrice * (1 - (product.discountPercent || 0) / 100);
-    cart.push({ id: product.id, variantId, name: product.name, price, imageUrl: product.imageUrl || '', qty });
+    cart.push({
+      id: product.id,
+      variantId: variantId,
+      name: name,
+      price: price,
+      imageUrl: image,
+      qty: qty
+    });
   }
   saveCart(cart);
-  showToast(`✓ Đã thêm "${product.name}" vào giỏ hàng`);
+  showToast(
+    `✓ Đã thêm "${product.name}" vào giỏ hàng`
+  );
+
   return true;
 }
 

@@ -15,11 +15,9 @@ public class PaymentHandlerContext {
     private PaymentStrategy paymentStrategy;
 
     private final VNPayStrategy vnPayStrategy;
-    private final StripePaymentStrategy stripePaymentStrategy;
 
-    public PaymentHandlerContext(VNPayStrategy vnPayStrategy, StripePaymentStrategy stripePaymentStrategy) {
+    public PaymentHandlerContext(VNPayStrategy vnPayStrategy ) {
         this.vnPayStrategy = vnPayStrategy;
-        this.stripePaymentStrategy = stripePaymentStrategy;
     }
 
     private PaymentStrategy getPaymentStrategy(PaymentMethod paymentMethod){
@@ -29,7 +27,6 @@ public class PaymentHandlerContext {
             case VNPAY -> vnPayStrategy;
             case MOMO -> null;
             case BANKING -> null;
-            case STRIPE -> stripePaymentStrategy;
             default -> throw new RuntimeException("Unsupported payment method");
         };
 

@@ -53,17 +53,6 @@ public class JwtConfig {
         return new NimbusJwtEncoder(new ImmutableSecret<>(getSecretKey()));
     }
 
-    // @Bean
-    // public JwtAuthenticationConverter jwtAuthenticationConverter() {
-    //     JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-    //     grantedAuthoritiesConverter.setAuthorityPrefix("");           // ← bỏ prefix mặc định "SCOPE_"
-    //     grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities");
-
-    //     JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-    //     jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-    //     return jwtAuthenticationConverter;
-    // }
-
     @Bean
 public JwtAuthenticationConverter jwtAuthenticationConverter() {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();

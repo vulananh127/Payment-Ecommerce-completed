@@ -10,8 +10,10 @@ import java.util.List;
 public class CreateProductRequest {
     private String name;
     private String description;
-    private double basePrice;
-    private double discountPercent;
+    // private double basePrice;
+    // private double discountPercent;
+    private Double price;
+    private Integer stockQuantity;
     private String imageUrl;
     private Long categoryId;
     private List<CreateProductVariantRequest> variants;

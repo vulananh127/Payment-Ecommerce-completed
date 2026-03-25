@@ -41,10 +41,7 @@ public abstract class PaymentStrategy {
 
         if(paymentRequest.getPaymentMethod().equals(PaymentMethod.VNPAY)){
             payment.setTransactionId(paymentRequest.getTransactionId());
-        }else if(paymentRequest.getPaymentMethod().equals(PaymentMethod.STRIPE)){
-            payment.setSessionId(paymentRequest.getSessionId());
         }
-
 
         try{
             paymentRepository.save(payment);

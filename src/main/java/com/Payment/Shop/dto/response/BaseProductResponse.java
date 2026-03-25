@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,13 +17,16 @@ public class BaseProductResponse {
 
     protected String description;
 
-    protected double basePrice;
-
-    protected double discountPercent;
-
     protected String imageUrl;
+
+    protected Double price;
+    protected Integer stockQuantity;
 
     protected Instant createdAt;
 
     protected Instant updatedAt;
+
+    protected CategoryResponse category;
+
+    protected List<ProductVariantResponse> variants;
 }

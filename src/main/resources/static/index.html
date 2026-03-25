@@ -106,20 +106,43 @@
 <!-- Modal chi tiết sản phẩm -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
   <div class="modal">
+
     <div class="modal-header">
       <h3 class="modal-title" id="modalName"></h3>
       <button class="close-btn" onclick="closeModal()">×</button>
     </div>
+
     <img class="modal-img" id="modalImg" src="" alt="" />
+
     <div class="modal-price" id="modalPrice"></div>
+
     <div class="modal-desc" id="modalDesc"></div>
+
+    <!-- ✅ thêm -->
+    <div class="modal-desc">
+      Danh mục: <b id="modalCategory"></b>
+    </div>
+
+    <div class="modal-desc">
+      Tồn kho: <b id="modalStock"></b>
+    </div>
+
+    <div class="modal-desc">
+      Biến thể: <b id="modalVariant"></b>
+    </div>
+    <!-- ✅ thêm -->
+
     <div class="quantity-row">
       <span style="font-size:0.9rem;color:#555;">Số lượng:</span>
       <button class="qty-btn" onclick="changeQty(-1)">−</button>
       <input class="qty-input" type="number" id="modalQty" value="1" min="1" />
       <button class="qty-btn" onclick="changeQty(1)">+</button>
     </div>
-    <button class="modal-add-btn" onclick="addToCartFromModal()">Thêm vào giỏ hàng</button>
+
+    <button class="modal-add-btn" onclick="addToCartFromModal()">
+      Thêm vào giỏ hàng
+    </button>
+
   </div>
 </div>
 
@@ -158,39 +181,94 @@
   // -------------------------------------------------------
   // Render sản phẩm
   // -------------------------------------------------------
-  function renderProducts(products) {
-    const grid = document.getElementById('productGrid');
-    document.getElementById('productCount').textContent = `${products.length} sản phẩm`;
-    if (!products.length) {
-      grid.innerHTML = '<div class="empty">Không tìm thấy sản phẩm nào.</div>';
-      return;
-    }
-    grid.innerHTML = products.map(p => {
-      const price = p.basePrice * (1 - (p.discountPercent || 0) / 100);
-      return `
-        <div class="product-card" onclick="openModal(${p.id})">
-          <div class="product-img">
-            ${p.imageUrl
-              ? `<img src="${p.imageUrl}" alt="${p.name}" onerror="this.parentElement.textContent='Không có ảnh'" />`
-              : 'Không có ảnh'}
-          </div>
-          <div class="product-info">
-            <div class="product-name">${p.name}</div>
-            <div class="product-category">${p.category?.categoryName || ''}</div>
-            <div class="product-price">
-              ${formatPrice(price)}
-              ${p.discountPercent > 0 ? `<span class="original">${formatPrice(p.basePrice)}</span>` : ''}
-            </div>
-            <div class="product-footer">
-              ${p.discountPercent > 0 ? `<span class="discount-badge">-${p.discountPercent}%</span>` : '<span></span>'}
-              <button class="add-cart-btn" onclick="event.stopPropagation(); handleAddToCart(${p.id})">
-                + Giỏ hàng
-              </button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+  // -------------------------------------------------------
+// Render sản phẩm
+// -------------------------------------------------------
+function renderProducts(products) {
+
+  const grid = document.getElementById('productGrid');
+
+  document.getElementById('productCount').textContent =
+    `${products.length} sản phẩm`;
+
+  if (!products.length) {
+    grid.innerHTML =
+      '<div class="empty">Không tìm thấy sản phẩm nào.</div>';
+    return;
   }
+
+  grid.innerHTML = products.map(p => {
+
+    // lấy price từ varient có price rẻ nhất
+    let  price = p.price || 0;
+      if (p.variants && p.variants.length > 0) {
+    price = Math.min(...p.variants.map(v => v.price));
+  }
+
+    // stock
+    const stock = p.stockQuantity || 0;
+
+    // category name
+    const categoryName = p.category?.name || '';
+
+    // ảnh
+    const image = p.imageUrl || '';
+
+    return `
+      <div class="product-card"
+           onclick="openModal(${p.id})">
+
+        <div class="product-img">
+
+          ${
+            image
+              ? `<img src="${image}"
+                      alt="${p.name}"
+                      onerror="this.parentElement.textContent='Không có ảnh'"/>`
+              : "Không có ảnh"
+          }
+
+        </div>
+
+        <div class="product-info">
+
+          <div class="product-name">
+            ${p.name}
+          </div>
+
+          <div class="product-category">
+            ${categoryName}
+          </div>
+
+          <div class="product-price">
+            ${formatPrice(price)}
+          </div>
+
+          <div class="product-footer">
+
+            <span class="stock">
+              Còn ${stock}
+            </span>
+
+            <button
+              class="add-cart-btn"
+              onclick="
+                event.stopPropagation();
+                handleAddToCart(${p.id})
+              "
+            >
+              + Giỏ hàng
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+  }).join('');
+}
 
   function filterProducts() {
     const kw = document.getElementById('searchInput').value.toLowerCase();
@@ -221,18 +299,80 @@
   // Modal chi tiết sản phẩm
   // -------------------------------------------------------
   function openModal(id) {
-    const p = allProducts.find(x => x.id === id);
-    if (!p) return;
-    currentProduct = p;
-    const price = p.basePrice * (1 - (p.discountPercent || 0) / 100);
-    document.getElementById('modalName').textContent = p.name;
-    document.getElementById('modalImg').src = p.imageUrl || '';
-    document.getElementById('modalImg').style.display = p.imageUrl ? 'block' : 'none';
-    document.getElementById('modalPrice').textContent = formatPrice(price);
-    document.getElementById('modalDesc').textContent = p.description || 'Không có mô tả.';
-    document.getElementById('modalQty').value = 1;
-    document.getElementById('modalOverlay').classList.add('show');
+
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+
+  currentProduct = p;
+
+  // price
+  let price = p.price || 0;
+
+  if (p.variants && p.variants.length > 0) {
+    price = p.variants[0].price;
   }
+
+  // image
+  const image = p.imageUrl || "";
+
+  // description
+  const desc = p.description || "Không có mô tả.";
+
+  // category
+  const category = p.category?.name || "";
+
+  // stock
+  let  stock = p.stockQuantity || 0;
+
+
+  // variant info
+  let variantText = "";
+
+  if (p.variants && p.variants.length > 0) {
+
+    const v = p.variants[0];
+
+    if (v.attributes) {
+
+      variantText = Object.entries(v.attributes)
+        .map(([k, val]) => `${k}: ${val}`)
+        .join(", ");
+
+    }
+
+  }
+
+  document.getElementById("modalName").textContent =
+    p.name;
+
+  document.getElementById("modalImg").src =
+    image;
+
+  document.getElementById("modalImg").style.display =
+    image ? "block" : "none";
+
+  document.getElementById("modalPrice").textContent =
+    formatPrice(price);
+
+  document.getElementById("modalDesc").textContent =
+    desc;
+
+  document.getElementById("modalCategory").textContent =
+    category;
+
+  document.getElementById("modalStock").textContent =
+    stock;
+
+  document.getElementById("modalVariant").textContent =
+    variantText;
+
+  document.getElementById("modalQty").value = 1;
+
+  document.getElementById("modalOverlay")
+    .classList.add("show");
+
+}
+
 
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('show');
@@ -244,11 +384,34 @@
   }
 
   function addToCartFromModal() {
-    if (!currentProduct) return;
-    const qty = parseInt(document.getElementById('modalQty').value) || 1;
-    const ok = addToCart(currentProduct, qty);
-    if (ok) closeModal();
+
+  if (!currentProduct) return;
+
+  const qty =
+    parseInt(
+      document.getElementById("modalQty").value
+    ) || 1;
+
+  let variantId = null;
+
+  if (
+    currentProduct.variants &&
+    currentProduct.variants.length > 0
+  ) {
+    variantId =
+      currentProduct.variants[0].id;
   }
+
+  const ok =
+    addToCart(
+      currentProduct,
+      qty,
+      variantId
+    );
+
+  if (ok) closeModal();
+
+}
 
   // -------------------------------------------------------
   // Load sản phẩm từ API (public, không cần token)
@@ -267,7 +430,7 @@
       cats.forEach(cat => {
         const btn = document.createElement('button');
         btn.className = 'filter-btn';
-        btn.textContent = cat.categoryName;
+        btn.textContent = cat.name;
         btn.onclick = () => selectCategory(cat.id, btn);
         filterDiv.appendChild(btn);
       });

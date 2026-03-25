@@ -4,54 +4,42 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "products")
 @Getter
 @Setter
-@Builder
+@NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@Table(name = "products")
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "product_seq")
-//    @SequenceGenerator(name = "product_seq", sequenceName = "product_seq", allocationSize = 50)
-//    private long id;
-
-
     private String name;
-
     private String description;
-
-    private double basePrice;
-
-    private double discountPercent;
-
     private String imageUrl;
-
     private Instant createdAt;
-
     private Instant updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
-
+    
+    @Builder.Default
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductVariant> productVariants = new ArrayList<>();
+    
+    private Set<ProductVariant> productVariants = new HashSet<>();
+    // public Product() {
 
-    public Product() {
-
-    }
+    // }
 
     @PrePersist
     public void prePersist() {

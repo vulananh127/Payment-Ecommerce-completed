@@ -1,27 +1,27 @@
 package com.Payment.Shop.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "product_variant")
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProductVariant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "variant_seq")
-//    @SequenceGenerator(name = "variant_seq", sequenceName = "variant_seq", allocationSize = 50)
-//    private long id;
 
     private String sku;
 
@@ -33,8 +33,9 @@ public class ProductVariant {
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @Builder.Default
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "productVariant", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductVariantOption> productVariantOptions = new ArrayList<>();
+    private Set<ProductVariantOption> productVariantOptions = new HashSet<>();
 
     public ProductVariant(Long id){
         this.id = id;

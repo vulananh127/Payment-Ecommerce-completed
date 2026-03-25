@@ -11,7 +11,7 @@ public class SavePaymentRequest extends PaymentRequest{
     private String transactionId;
 
     // sessionId is used for Stripe payment, crucial to retrieve checkout session
-    private String sessionId;
+    // private String sessionId;
 
     private String createdAt;
 }

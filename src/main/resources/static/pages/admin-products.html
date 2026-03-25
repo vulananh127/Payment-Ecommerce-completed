@@ -125,9 +125,8 @@
       <thead>
         <tr>
           <th>Sản phẩm</th>
-          <th>Giá gốc</th>
-          <th>Giảm giá</th>
           <th>Giá bán</th>
+          <th>Tồn kho</th>
           <th>Variants</th>
           <th>Ngày tạo</th>
           <th>Thao tác</th>
@@ -159,16 +158,6 @@
       <div class="form-group">
         <label>Tên sản phẩm *</label>
         <input type="text" id="pName" placeholder="Nhập tên sản phẩm" />
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Giá gốc (VND) *</label>
-          <input type="number" id="pPrice" placeholder="100000" min="0" />
-        </div>
-        <div class="form-group">
-          <label>Giảm giá (%)</label>
-          <input type="number" id="pDiscount" value="0" min="0" max="100" />
-        </div>
       </div>
       <div class="form-group">
         <label>Danh mục</label>
@@ -203,17 +192,6 @@
   </div>
 </div>
 
-<!-- Modal xem chi tiết + quản lý variants -->
-<div class="modal-overlay" id="detailOverlay">
-  <div class="modal" style="max-width:780px;">
-    <div class="modal-header">
-      <h3 class="modal-title" id="detailTitle">Chi tiết sản phẩm</h3>
-      <button class="close-btn" onclick="closeDetailModal()">×</button>
-    </div>
-    <div id="detailContent"></div>
-  </div>
-</div>
-
 <script src="/js/api.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -223,7 +201,7 @@
   });
 
   let allProducts = [];
-  let editingId = null;
+  let editingProductId = null;
   let variantCount = 0;
 
   // ============================================================
@@ -275,210 +253,442 @@
     ));
   }
 
+
   function renderTable(products) {
-    const tbody = document.getElementById('productTable');
-    if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">Không có sản phẩm nào.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = products.map(p => {
-      const selling = p.basePrice * (1 - (p.discountPercent || 0) / 100);
-      const variantCount = p.productVariants?.length || 0;
-      return `<tr>
-        <td><div class="product-cell">
-          <img class="product-thumb" src="${p.imageUrl||''}"
-               onerror="this.style.background='#f0f0f0';this.src=''" />
-          <div>
-            <div style="font-weight:500;">${p.name}</div>
-            <div style="font-size:0.8rem;color:#888;">${p.category?.categoryName||'—'}</div>
-          </div>
-        </div></td>
-        <td>${formatPrice(p.basePrice)}</td>
-        <td>${p.discountPercent > 0 ? `<span class="discount-badge">-${p.discountPercent}%</span>` : '—'}</td>
-        <td class="price">${formatPrice(selling)}</td>
-        <td>
-          <span style="font-size:0.85rem; color:#555;">${variantCount} biến thể</span>
-        </td>
-        <td style="color:#888;font-size:0.8rem;">${formatDate(p.createdAt)}</td>
-        <td><div class="actions">
-          <button class="btn btn-edit btn-sm" onclick="openEditModal(${p.id})">Sửa</button>
-          <button class="btn btn-sm" style="background:#f0f9f4;color:#2e7d32;border:1px solid #c8e6c9;"
-                  onclick="openDetailModal(${p.id})">Variants</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Xóa</button>
-        </div></td>
-      </tr>`;
-    }).join('');
+  const tbody =
+    document.getElementById('productTable');
+  if (!products.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="empty">Không có sản phẩm nào.</td></tr>';
+
+    return;
   }
+
+  tbody.innerHTML =
+    products.map(p => {
+
+      const price =
+        p.price ?? 0;
+
+      const stock =
+        p.stockQuantity ?? 0;
+
+      const variantCount =
+        p.variants?.length || 0;
+
+      return `
+
+<tr>
+
+<td>
+
+  <div class="product-cell">
+
+    <img
+      class="product-thumb"
+      src="${p.imageUrl || ''}"
+    />
+
+    <div>
+
+      <div>
+        ${p.name}
+      </div>
+
+    </div>
+
+  </div>
+
+</td>
+
+<td class="price">
+  ${formatPrice(price)}
+</td>
+
+<td>
+  <span class="stock-badge">
+    ${stock}
+  </span>
+</td>
+<td>
+  ${variantCount} variants
+</td>
+<td>
+
+  ${formatDate(p.createdAt)}
+
+</td>
+
+<td>
+  <div class="actions">
+           <button class="btn btn-edit btn-sm" onclick="openEditModal(${p.id})">Sửa</button>
+           <button class="btn btn-sm" style="background:#f0f9f4;color:#2e7d32;border:1px solid #c8e6c9;"
+                   onclick="openVariantModal(${p.id})">Variants</button>
+           <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Xóa</button>
+         </div>
+      </td>
+
+</tr>
+`;
+
+    }).join("");
+}
 
   // ============================================================
   // MODAL THÊM/SỬA SẢN PHẨM
   // ============================================================
+
   function openAddModal() {
-    editingId = null;
-    variantCount = 0;
-    document.getElementById('modalTitle').textContent = 'Thêm sản phẩm mới';
-    document.getElementById('pName').value = '';
-    document.getElementById('pPrice').value = '';
-    document.getElementById('pDiscount').value = '0';
-    document.getElementById('pCategory').value = '';
-    document.getElementById('pImage').value = '';
-    document.getElementById('pDesc').value = '';
-    document.getElementById('variantList').innerHTML = '';
-    // Reset về tab đầu
-    document.querySelectorAll('.detail-tab')[0].click();
-    document.getElementById('modalOverlay').classList.add('show');
+
+  editingProductId = null;
+
+  modalTitle.innerText = "Thêm sản phẩm";
+
+  pName.value = "";
+  pDesc.value = "";
+  pImage.value = "";
+  pCategory.value = "";
+
+  variantList.innerHTML = "";
+
+  addVariant();
+
+  modalOverlay.classList.add("show");
+
+  switchTab(
+    "info",
+    document.querySelectorAll(".detail-tab")[0]
+  );
+
   }
 
-  function openEditModal(id) {
-    const p = allProducts.find(x => x.id === id);
-    if (!p) return;
-    editingId = id;
-    variantCount = 0;
-    document.getElementById('modalTitle').textContent = 'Sửa sản phẩm';
-    document.getElementById('pName').value = p.name || '';
-    document.getElementById('pPrice').value = p.basePrice || '';
-    document.getElementById('pDiscount').value = p.discountPercent || 0;
-    document.getElementById('pCategory').value = p.category?.id || '';
-    document.getElementById('pImage').value = p.imageUrl || '';
-    document.getElementById('pDesc').value = p.description || '';
+  async function openEditModal(id) {
 
-    // Render variants có sẵn
-    const variantList = document.getElementById('variantList');
-    variantList.innerHTML = '';
-    if (p.productVariants?.length) {
-      p.productVariants.forEach(v => {
-        addVariant({
-          sku: v.sku,
-          price: v.price,
-          stock: v.stock,
-          attributes: v.productVariantOptions || []
-        });
-      });
-    }
+  const p = await apiGetProduct(id);
 
-    document.querySelectorAll('.detail-tab')[0].click();
-    document.getElementById('modalOverlay').classList.add('show');
-  }
+  editingProductId = id;
+  variantCount = 0;
 
-  function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('show');
-  }
+  modalTitle.innerText = "Sửa sản phẩm";
 
-  // ============================================================
-  // VARIANT BUILDER
-  // ============================================================
-  function addVariant(data = null) {
-    variantCount++;
-    const idx = variantCount;
-    const list = document.getElementById('variantList');
+  pName.value = p.name;
+  pDesc.value = p.description;
+  pCategory.value = p.categoryId || "";
+  pImage.value = p.imageUrl || "";
 
-    const sku = data?.sku || '';
-    const price = data?.price || '';
-    const stock = data?.stock || '';
+  variantList.innerHTML = "";
 
-    const div = document.createElement('div');
-    div.className = 'variant-item';
-    div.id = `variant-${idx}`;
-    div.innerHTML = `
-      <div class="variant-item-header">
-        <span class="variant-label">Biến thể #${idx}</span>
-        <button class="remove-variant-btn" onclick="removeVariant(${idx})">✕ Xóa</button>
-      </div>
-      <div class="form-row-3">
-        <div class="form-group" style="margin-bottom:0;">
-          <label>SKU</label>
-          <input type="text" id="v-sku-${idx}" value="${sku}" placeholder="VD: SKU001" />
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label>Giá (VND) *</label>
-          <input type="number" id="v-price-${idx}" value="${price}" placeholder="0" min="0" />
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label>Tồn kho *</label>
-          <input type="number" id="v-stock-${idx}" value="${stock}" placeholder="0" min="0" />
-        </div>
-      </div>
-      <div style="margin-top:0.75rem;">
-        <label style="margin-bottom:0.4rem;">Thuộc tính (màu sắc, kích thước...)</label>
-        <div class="attr-list" id="attrs-${idx}"></div>
-        <button class="add-attr-btn" onclick="addAttr(${idx})">+ Thêm thuộc tính</button>
-      </div>`;
-    list.appendChild(div);
-
-    // Thêm attributes có sẵn
-    if (data?.attributes?.length) {
-      data.attributes.forEach(attr => {
-        addAttr(idx, attr.attribute || attr.key, attr.value);
-      });
-    }
-  }
-
-  function removeVariant(idx) {
-    document.getElementById(`variant-${idx}`)?.remove();
-  }
-
-  function addAttr(variantIdx, key = '', value = '') {
-    const attrList = document.getElementById(`attrs-${variantIdx}`);
-    const attrId = Date.now();
-    const row = document.createElement('div');
-    row.className = 'attr-row';
-    row.id = `attr-${attrId}`;
-    row.innerHTML = `
-      <input type="text" placeholder="Tên (VD: Màu)" value="${key}" style="flex:1;" />
-      <input type="text" placeholder="Giá trị (VD: Đỏ)" value="${value}" style="flex:1;" />
-      <button class="remove-attr-btn" onclick="document.getElementById('attr-${attrId}').remove()">✕</button>`;
-    attrList.appendChild(row);
-  }
-
-  function collectVariants() {
-    const variants = [];
-    document.querySelectorAll('.variant-item').forEach(item => {
-      const idx = item.id.replace('variant-', '');
-      const sku = document.getElementById(`v-sku-${idx}`)?.value.trim();
-      const price = parseFloat(document.getElementById(`v-price-${idx}`)?.value);
-      const stock = parseInt(document.getElementById(`v-stock-${idx}`)?.value);
-
-      if (!price || isNaN(price)) return; // skip invalid
-
-      const attributes = {};
-      item.querySelectorAll('.attr-row').forEach(row => {
-        const inputs = row.querySelectorAll('input');
-        const k = inputs[0]?.value.trim();
-        const v = inputs[1]?.value.trim();
-        if (k && v) attributes[k] = v;
-      });
-
-      variants.push({ sku, price, stockQuantity: stock || 0, attributes });
+  if (p.variants) {
+    p.variants.forEach(v => {
+      addVariant(v);
     });
-    return variants;
   }
 
+  modalOverlay.classList.add("show");
+
+  switchTab(
+    "info",
+    document.querySelectorAll(".detail-tab")[0]
+  );
+
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+
+}
+
+  // ============================================================
+// VARIANT BUILDER (FIX)
+// ============================================================
+
+function addVariant(v = {}) {
+  variantCount++;
+
+  const idx = variantCount;
+
+  const div = document.createElement("div");
+  div.className = "variant-item";
+  div.id = `variant-${idx}`;
+
+  div.innerHTML = `
+    <div class="variant-item-header">
+      <div class="variant-label">Biến thể #${idx}</div>
+      <button class="remove-variant-btn"
+        onclick="removeVariant(${idx})">Xóa</button>
+    </div>
+
+    <div class="form-row-3">
+      <div>
+        <label>SKU</label>
+        <input type="text" id="v-sku-${idx}" readonly style="background:#eee;" value="${v.sku || ""}" />
+      </div>
+
+      <div>
+        <label>Giá</label>
+        <input type="number" id="v-price-${idx}"
+          value="${v.price || 0}" />
+      </div>
+
+      <div>
+        <label>Tồn kho</label>
+        <input type="number" id="v-stock-${idx}"
+          value="${v.stockQuantity || 0}" />
+      </div>
+    </div>
+
+    <div>
+      <label>Thuộc tính</label>
+      <div class="attr-list"
+        id="attrs-${idx}">
+      </div>
+
+      <button class="add-attr-btn"
+        onclick="addAttr(${idx})">
+        + Thêm thuộc tính
+      </button>
+    </div>
+  `;
+
+  document.getElementById("variantList")
+    .appendChild(div);
+
+  // load attributes nếu có
+  if (v.attributes) {
+    Object.keys(v.attributes).forEach(k => {
+      addAttr(idx, k, v.attributes[k]);
+    });
+  }
+  updateSku(idx);
+}
+
+function generateSku(attrs) {
+
+  const values = Object.values(attrs)
+    .filter(v => v && v.trim() !== "")
+    .map(v => v.trim().toUpperCase().replaceAll(" ", ""));
+
+  if (values.length === 0) {
+    return "DEFAULT";
+  }
+
+  return values.join("-");
+} 
+
+function updateSku(variantIdx) {
+
+  const attrs = {};
+
+  document
+    .querySelectorAll(`#attrs-${variantIdx} .attr-row`)
+    .forEach(row => {
+
+      const key =
+        row.querySelector("select").value;
+
+      const value =
+        row.querySelector("input").value;
+
+      if (key && value) {
+        attrs[key] = value;
+      }
+
+    });
+
+  const sku = generateSku(attrs);
+
+  document.getElementById(
+    `v-sku-${variantIdx}`
+  ).value = sku;
+}
+
+function removeVariant(idx) {
+  document.getElementById(`variant-${idx}`)?.remove();
+}
+
+
+// function addAttr(variantIdx, key = "", value = "") {
+
+//   const attrList =
+//     document.getElementById(`attrs-${variantIdx}`);
+
+//   const id = Date.now();
+
+//   const row = document.createElement("div");
+
+//   row.className = "attr-row";
+
+//   row.id = `attr-${id}`;
+
+//   row.innerHTML = `
+//     <select
+//     onchange="updateSku(${variantIdx})"
+//     style="flex:1;">
+
+//     <option value="">Chọn</option>
+//     <option value="color">Color</option>
+//     <option value="size">Size</option>
+//     <option value="ram">RAM</option>
+//     <option value="storage">Storage</option>
+
+//   </select>
+
+//   <input
+//     type="text"
+//     placeholder="Giá trị"
+//     style="flex:1;"
+//     oninput="updateSku(${variantIdx})" />
+
+//   <button
+//     class="remove-attr-btn"
+//     onclick="
+//       document.getElementById('attr-${id}').remove();
+//       updateSku(${variantIdx});
+//     ">
+//     ✕
+//   </button>
+//   `;
+
+//   attrList.appendChild(row);
+//   updateSku(variantIdx);
+// }
+
+function addAttr(variantIdx, key = "", value = "") {
+
+  const attrList =
+    document.getElementById(`attrs-${variantIdx}`);
+
+  const id = Date.now();
+
+  const row = document.createElement("div");
+
+  row.className = "attr-row";
+
+  row.id = `attr-${id}`;
+
+  row.innerHTML = `
+    <select
+    onchange="updateSku(${variantIdx})"
+    style="flex:1;">
+
+    <option value="">Chọn</option>
+    <option value="color">Color</option>
+    <option value="size">Size</option>
+    <option value="ram">RAM</option>
+    <option value="storage">Storage</option>
+
+  </select>
+
+  <input
+    type="text"
+    placeholder="Giá trị"
+    style="flex:1;"
+    oninput="updateSku(${variantIdx})" />
+
+  <button
+    class="remove-attr-btn"
+    onclick="
+      document.getElementById('attr-${id}').remove();
+      updateSku(${variantIdx});
+    ">
+    ✕
+  </button>
+  `;
+
+  attrList.appendChild(row);
+
+  // ✅ set value khi edit
+  if (key) {
+    row.querySelector("select").value = key;
+  }
+
+  if (value) {
+    row.querySelector("input").value = value;
+  }
+
+  updateSku(variantIdx);
+}
+
+function getVariants() {
+
+  const variants = [];
+
+  document
+    .querySelectorAll(".variant-item")
+    .forEach(item => {
+
+      const idx =
+        item.id.split("-")[1];
+
+      // const sku =
+      //   document.getElementById(
+      //     `v-sku-${idx}`
+      //   ).value;
+
+      const price =
+        document.getElementById(
+          `v-price-${idx}`
+        ).value;
+
+      const stock =
+        document.getElementById(
+          `v-stock-${idx}`
+        ).value;
+
+      const attrs = {};
+
+      document
+        .querySelectorAll(
+          `#attrs-${idx} .attr-row`
+        )
+        .forEach(row => {
+
+              const key =
+          row.querySelector("select").value;
+
+        const value =
+          row.querySelector("input").value;
+
+        if (key && value) {
+          attrs[key] = value;
+        }
+
+        });
+
+      if ( price > 0 || stock > 0 || Object.keys(attrs).length > 0) {
+        variants.push({
+      //    sku,
+          price: Number(price),
+          stockQuantity: Number(stock),
+          attributes: attrs
+        });
+      }
+
+    });
+
+  return variants;
+}
   // ============================================================
   // SAVE PRODUCT
   // ============================================================
   async function saveProduct() {
     const name = document.getElementById('pName').value.trim();
-    const basePrice = parseFloat(document.getElementById('pPrice').value);
     if (!name) { showToast('Vui lòng nhập tên sản phẩm', 'error'); return; }
-    if (!basePrice || isNaN(basePrice)) { showToast('Vui lòng nhập giá sản phẩm', 'error'); return; }
 
     const catId = document.getElementById('pCategory').value;
     if (!catId) { showToast('Vui lòng chọn danh mục', 'error'); return; }
 
-    const variants = collectVariants();
     const body = {
-      name,
-      basePrice,
-      discountPercent: parseFloat(document.getElementById('pDiscount').value) || 0,
-      categoryId: parseInt(catId),
-      imageUrl: document.getElementById('pImage').value.trim(),
-      description: document.getElementById('pDesc').value.trim(),
-      variants: variants.length > 0 ? variants : null
+      name: pName.value,
+      description: pDesc.value,
+      categoryId: pCategory.value,
+      imageUrl: pImage.value,
+      variants: getVariants()
     };
 
     try {
-      if (editingId) {
-        await apiUpdateProduct(editingId, body);
+      if (editingProductId) {
+        await apiUpdateProduct(editingProductId, body);
         showToast('✓ Đã cập nhật sản phẩm');
       } else {
         await apiCreateProduct(body);
@@ -504,144 +714,37 @@
     } catch (err) { showToast(err.message, 'error'); }
   }
 
-  // ============================================================
-  // MODAL CHI TIẾT / QUẢN LÝ VARIANTS
-  // ============================================================
-  async function openDetailModal(id) {
-    const p = allProducts.find(x => x.id === id);
-    if (!p) return;
+// QUẢN LÝ VARIANT ///
+async function openVariantModal(id) {
 
-    document.getElementById('detailTitle').textContent = `Variants: ${p.name}`;
-    const content = document.getElementById('detailContent');
+  const p = await apiGetProduct(id);
 
-    const variants = p.productVariants || [];
+  editingProductId = id;
+  variantCount = 0;
 
-    content.innerHTML = `
-      <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.875rem; color:#555;">${variants.length} biến thể</span>
-        <button class="btn btn-primary btn-sm" onclick="openAddVariantInline(${id})">+ Thêm biến thể</button>
-      </div>
-      ${variants.length === 0 ? '<div class="empty" style="padding:2rem;">Chưa có biến thể nào.</div>' : `
-      <table class="variant-table">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Giá</th>
-            <th>Tồn kho</th>
-            <th>Thuộc tính</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${variants.map(v => `
-            <tr>
-              <td style="font-weight:500;">${v.sku || '—'}</td>
-              <td class="price">${formatPrice(v.price)}</td>
-              <td>
-                <span class="stock-badge ${v.stock > 10 ? 'stock-ok' : v.stock > 0 ? 'stock-low' : 'stock-out'}">
-                  ${v.stock} còn lại
-                </span>
-              </td>
-              <td>
-                ${(v.productVariantOptions || []).map(opt =>
-                  `<span style="background:#f0f0f0;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.8rem;margin-right:0.3rem;">
-                    ${opt.attribute}: ${opt.value}
-                  </span>`
-                ).join('')}
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`}
-      <div id="addVariantInline" style="display:none; margin-top:1.5rem; border-top:1px solid #eee; padding-top:1.25rem;">
-        <div style="font-weight:600; margin-bottom:1rem;">Thêm biến thể mới</div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label>SKU</label>
-            <input type="text" id="new-sku" placeholder="SKU001" />
-          </div>
-          <div class="form-group">
-            <label>Giá *</label>
-            <input type="number" id="new-price" placeholder="0" min="0" />
-          </div>
-          <div class="form-group">
-            <label>Tồn kho *</label>
-            <input type="number" id="new-stock" placeholder="0" min="0" />
-          </div>
-        </div>
-        <div>
-          <label>Thuộc tính</label>
-          <div class="attr-list" id="new-attrs"></div>
-          <button class="add-attr-btn" onclick="addNewAttr()">+ Thêm thuộc tính</button>
-        </div>
-        <div style="display:flex; gap:0.75rem; margin-top:1rem;">
-          <button class="btn-cancel" onclick="document.getElementById('addVariantInline').style.display='none'">Hủy</button>
-          <button class="btn btn-primary" onclick="saveNewVariant(${id})">Lưu biến thể</button>
-        </div>
-      </div>
-    `;
+  modalTitle.innerText = "Sửa sản phẩm";
 
-    document.getElementById('detailOverlay').classList.add('show');
-  }
+  pName.value = p.name;
+  pDesc.value = p.description;
+  pCategory.value = p.categoryId || "";
+  pImage.value = p.imageUrl || "";
 
-  function closeDetailModal() {
-    document.getElementById('detailOverlay').classList.remove('show');
-  }
+  variantList.innerHTML = "";
 
-  function openAddVariantInline(productId) {
-    document.getElementById('addVariantInline').style.display = 'block';
-    document.getElementById('new-attrs').innerHTML = '';
-  }
-
-  let newAttrCount = 0;
-  function addNewAttr() {
-    newAttrCount++;
-    const id = `new-attr-${newAttrCount}`;
-    const row = document.createElement('div');
-    row.className = 'attr-row';
-    row.id = id;
-    row.innerHTML = `
-      <input type="text" placeholder="Tên (VD: Màu)" style="flex:1;" />
-      <input type="text" placeholder="Giá trị (VD: Đỏ)" style="flex:1;" />
-      <button class="remove-attr-btn" onclick="document.getElementById('${id}').remove()">✕</button>`;
-    document.getElementById('new-attrs').appendChild(row);
-  }
-
-  async function saveNewVariant(productId) {
-    const sku = document.getElementById('new-sku').value.trim();
-    const price = parseFloat(document.getElementById('new-price').value);
-    const stock = parseInt(document.getElementById('new-stock').value) || 0;
-
-    if (!price || isNaN(price)) { showToast('Vui lòng nhập giá biến thể', 'error'); return; }
-
-    const attributes = {};
-    document.querySelectorAll('#new-attrs .attr-row').forEach(row => {
-      const inputs = row.querySelectorAll('input');
-      const k = inputs[0]?.value.trim();
-      const v = inputs[1]?.value.trim();
-      if (k && v) attributes[k] = v;
+  if (p.variants) {
+    p.variants.forEach(v => {
+      addVariant(v);
     });
-
-    // Lấy product hiện tại và update với variant mới
-    const p = allProducts.find(x => x.id === productId);
-    if (!p) return;
-
-    try {
-      await apiUpdateProduct(productId, {
-        name: p.name,
-        basePrice: p.basePrice,
-        discountPercent: p.discountPercent,
-        categoryId: p.category?.id,
-        imageUrl: p.imageUrl,
-        description: p.description,
-        variants: [{ sku, price, stockQuantity: stock, attributes }]
-      });
-      showToast('✓ Đã thêm biến thể');
-      closeDetailModal();
-      loadProducts();
-    } catch (err) {
-      showToast('Lỗi: ' + err.message, 'error');
-    }
   }
 
+  modalOverlay.classList.add("show");
+
+  // chuyển sang tab variants
+  switchTab("variants",
+    document.querySelectorAll(".detail-tab")[1]
+  );
+
+}
   // ============================================================
   // API helpers cho admin endpoints
   // ============================================================
@@ -671,9 +774,14 @@
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
   });
+
   document.getElementById('detailOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('detailOverlay')) closeDetailModal();
   });
+  function closeDetailModal() {
+    document.getElementById('detailOverlay').classList.remove('show');
+  }
+
 </script>
 </body>
 </html>
