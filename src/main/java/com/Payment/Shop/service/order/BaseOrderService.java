@@ -81,16 +81,30 @@ public class BaseOrderService implements IOrderService {
         PaymentMethod method = createOrderRequest.getPaymentMethod();
         PaymentStatus paymentStatus;
         // tính totalAmount
-        BigDecimal total = productVariants.stream()
-            .map(p -> 
-                BigDecimal.valueOf(p.getPrice())
-                .multiply(
-                    BigDecimal.valueOf(
-                        variantDtoMap.get(p.getId()).getQuantity()
-                    )
-                )
-            )
-         .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (ProductVariant pv : productVariants) {
+
+            ProductVariantDto dto =
+                    variantDtoMap.get(pv.getId());
+
+            if (dto == null) {
+                throw new RuntimeException(
+                        "Variant not found in request: " + pv.getId()
+                );
+            }
+
+            BigDecimal price =
+                    BigDecimal.valueOf(pv.getPrice());
+
+            BigDecimal qty =
+                    BigDecimal.valueOf(dto.getQuantity());
+
+            total = total.add(
+                    price.multiply(qty)
+            );
+        }
+
         if (method == PaymentMethod.COD) {
             paymentStatus = PaymentStatus.UNPAID;
         } else {
@@ -115,9 +129,16 @@ public class BaseOrderService implements IOrderService {
         Order savedOrder = orderRepository.save(order);
 
         List<OrderItem> orderItems = productVariants.stream().map(productVariant -> {
-            Integer qty = variantDtoMap
-                    .get(productVariant.getId())
-                    .getQuantity();
+            ProductVariantDto dto =
+                variantDtoMap.get(productVariant.getId());
+
+        if (dto == null) {
+            throw new RuntimeException(
+                    "Variant mismatch: " + productVariant.getId()
+            );
+        }
+
+        Integer qty = dto.getQuantity();
 
             BigDecimal price = BigDecimal.valueOf(
                     productVariant.getPrice()
@@ -135,6 +156,7 @@ public class BaseOrderService implements IOrderService {
                             )
                     )
                     .quantity(qty)
+                    .unitPriceAfterDiscount(price)
                     .totalPrice(totalPrice)
                     .build();
 
@@ -178,7 +200,12 @@ public class BaseOrderService implements IOrderService {
     private void validateStock(List<ProductVariant> productVariants, Map<Long, ProductVariantDto> variantDtoMap) {
 
         for(ProductVariant productVariant : productVariants){
-            Integer requestedQuantity = variantDtoMap.get(productVariant.getId()).getQuantity();
+            ProductVariantDto dto =
+        variantDtoMap.get(productVariant.getId());
+
+Integer requestedQuantity =
+        dto.getQuantity();
+        
             if(productVariant.getStock() < requestedQuantity){
                 log.error("Insufficient stock for variant ID: {}, available: {}, requested: {}",
                         productVariant.getId(), productVariant.getStock(), requestedQuantity);
@@ -202,7 +229,11 @@ public class BaseOrderService implements IOrderService {
     // Optimistic lock
     private void updateStockOptimistic( List<ProductVariant> productVariants, Map<Long, ProductVariantDto> variantDtoMap) {
         for(ProductVariant productVariant : productVariants){
-            Integer requestedQuantity = variantDtoMap.get(productVariant.getId()).getQuantity();
+            ProductVariantDto dto =
+            variantDtoMap.get(productVariant.getId());
+
+    Integer requestedQuantity =
+            dto.getQuantity();
 
             int updatedRows = productService.updateStockOptimistic(productVariant.getId(), requestedQuantity);
 
