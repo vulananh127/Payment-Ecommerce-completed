@@ -1,5 +1,7 @@
 package com.Payment.Shop.entity;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,9 +26,9 @@ public class OrderItem {
 
     private int quantity;
 
-    private double unitPriceAfterDiscount;
+    private BigDecimal unitPriceAfterDiscount;
 
-    private double totalPrice;
+    private BigDecimal totalPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")

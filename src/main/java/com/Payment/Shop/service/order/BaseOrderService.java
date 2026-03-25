@@ -115,13 +115,29 @@ public class BaseOrderService implements IOrderService {
         Order savedOrder = orderRepository.save(order);
 
         List<OrderItem> orderItems = productVariants.stream().map(productVariant -> {
-            OrderItem orderItem = OrderItem.builder()
-                    .order(order)
-                    .productVariant(new ProductVariant(productVariant.getId()))
-                    .quantity(variantDtoMap.get(productVariant.getId()).getQuantity())
-                    .totalPrice(productVariant.getPrice() * variantDtoMap.get(productVariant.getId()).getQuantity())
+            Integer qty = variantDtoMap
+                    .get(productVariant.getId())
+                    .getQuantity();
+
+            BigDecimal price = BigDecimal.valueOf(
+                    productVariant.getPrice()
+            );
+
+            BigDecimal totalPrice = price.multiply(
+                    BigDecimal.valueOf(qty)
+            );
+
+            return OrderItem.builder()
+                    .order(savedOrder)
+                    .productVariant(
+                            new ProductVariant(
+                                    productVariant.getId()
+                            )
+                    )
+                    .quantity(qty)
+                    .totalPrice(totalPrice)
                     .build();
-            return orderItem;
+
         }).toList();
 
         orderItemRepository.saveAll(orderItems);
