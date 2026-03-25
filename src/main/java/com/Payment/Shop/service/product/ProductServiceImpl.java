@@ -22,6 +22,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
@@ -212,7 +213,7 @@ public BaseProductResponse getProductById(Long id) {
                 variant.setStock(variantReq.getStockQuantity());
                 variant.setPrice(variantReq.getPrice());
                 variant.setProduct(product);
-                variant.setProductVariantOptions(new ArrayList<>());
+                variant.setProductVariantOptions(new HashSet<>());
 
                 if (variantReq.getAttributes() != null) {
                     for (var entry : variantReq.getAttributes().entrySet()) {
@@ -384,8 +385,12 @@ public BaseProductResponse createProduct(CreateProductRequest request) {
 
         if (!product.getProductVariants().isEmpty()) {
 
-            ProductVariant v =
-                    product.getProductVariants().get(0);
+            List<ProductVariant> list1 =
+                new ArrayList<>(product.getProductVariants());
+
+            ProductVariant v = list1.get(0);
+            // ProductVariant v =
+            //         product.getProductVariants().get(0);
 
             res.setPrice(v.getPrice());
 
