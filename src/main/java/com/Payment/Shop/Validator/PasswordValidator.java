@@ -1,7 +1,5 @@
 package com.Payment.Shop.Validator;
 
-import org.springframework.stereotype.Service;
-
 //@Service
 public class PasswordValidator {
 

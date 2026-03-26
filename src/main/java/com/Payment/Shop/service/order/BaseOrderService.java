@@ -7,6 +7,7 @@ import com.Payment.Shop.dto.request.CreateOrderRequest;
 import com.Payment.Shop.dto.request.OrderItemRequest;
 import com.Payment.Shop.dto.response.AdminOrderResponse;
 import com.Payment.Shop.dto.response.BaseOrderResponse;
+import com.Payment.Shop.dto.response.OrderItemResponse;
 import com.Payment.Shop.dto.response.AdminOrderResponse;
 import com.Payment.Shop.entity.Order;
 import com.Payment.Shop.entity.OrderItem;
@@ -51,6 +52,15 @@ public class BaseOrderService implements IOrderService {
     @Transactional
     public BaseOrderResponse createOrder(CreateOrderRequest createOrderRequest) {
 
+        //LOG
+        log.info("REQUEST productVariants = {}",
+        createOrderRequest.getProductVariants());
+        for (OrderItemRequest dto : createOrderRequest.getProductVariants()) {
+    log.info("DTO variantId={}, qty={}",
+            dto.getVariantId(),
+            dto.getQuantity());
+}
+
         String userId = JwtUtil.getCurrentUserLogin()
                         .orElseThrow(() -> new BadCredentialsException("User is not authenticated"));
 
@@ -69,10 +79,12 @@ public class BaseOrderService implements IOrderService {
                         productVariant.getVariantId())
                 .toList();
 
-        List<ProductVariant> productVariants= productService.findAllProductVariantByVariantId(productVariantIds);
-
-        // Load product variants in and lock using Pessimistic lock
-//        List<ProductVariant> productVariants= productService.findAllProductVariantByVariantIdWithLock(productVariantIds);
+        List<ProductVariant> productVariants= productService.findAllProductVariantByVariantIdWithProduct(productVariantIds);
+        productVariants.forEach(v ->
+        log.info("DB variant id={}, price={}",
+                v.getId(),
+                v.getPrice())
+);
 
         // Validate stock
         this.validateStock(productVariants, variantDtoMap);
@@ -84,10 +96,8 @@ public class BaseOrderService implements IOrderService {
         BigDecimal total = BigDecimal.ZERO;
 
         for (ProductVariant pv : productVariants) {
-
             OrderItemRequest dto =
                     variantDtoMap.get(pv.getId());
-
             if (dto == null) {
                 throw new RuntimeException(
                         "Variant not found in request: " + pv.getId()
@@ -128,41 +138,35 @@ public class BaseOrderService implements IOrderService {
         Order savedOrder = orderRepository.save(order);
 
         List<OrderItem> orderItems = productVariants.stream()
-        .map(productVariant -> {
+    .map(productVariant -> {
 
-            OrderItemRequest dto =
-                    variantDtoMap.get(productVariant.getId());
+        OrderItemRequest dto = variantDtoMap.get(productVariant.getId());
 
-            if (dto == null) {
-                throw new RuntimeException(
-                        "Variant mismatch: " + productVariant.getId()
-                );
-            }
+        if (dto == null) {
+            throw new RuntimeException("Variant mismatch: " + productVariant.getId());
+        }
 
-            Integer qty = dto.getQuantity();
+        Integer qty = dto.getQuantity();
+        BigDecimal price = productVariant.getPrice();
+        BigDecimal totalPrice = price.multiply(BigDecimal.valueOf(qty));
 
-            BigDecimal price =
-                    productVariant.getPrice();
+        // ✅ Lấy productName và variantName (SKU)
+        String productName = productVariant.getProduct() != null
+                ? productVariant.getProduct().getName()
+                : "Unknown";
+        String variantName = productVariant.getSku();
 
-            BigDecimal totalPrice =
-                    price.multiply(
-                            BigDecimal.valueOf(qty)
-                    );
-
-            return OrderItem.builder()
-                    .order(savedOrder)
-                    .productVariant(
-                            new ProductVariant(
-                                    productVariant.getId()
-                            )
-                    )
-                    .quantity(qty)
-                    .unitPrice(price)
-                    .totalPrice(totalPrice)
-                    .build();
-
-        })
-        .toList();
+        return OrderItem.builder()
+                .order(savedOrder)
+                .productVariant(new ProductVariant(productVariant.getId()))
+                .quantity(qty)
+                .unitPrice(price)
+                .totalPrice(totalPrice)
+                .productName(productName)   // ✅ THÊM
+                .variantName(variantName)   // ✅ THÊM
+                .build();
+    })
+    .toList();
         
         orderItemRepository.saveAll(orderItems);
 
@@ -216,18 +220,52 @@ Integer requestedQuantity =
         }
     }
 
-    private void updateStock( List<ProductVariant> productVariants, Map<Long, OrderItemRequest> variantDtoMap) {
-        for(ProductVariant productVariant : productVariants){
-            Integer requestedQuantity = variantDtoMap.get(productVariant.getId()).getQuantity();
-            int newStock = productVariant.getStock() - requestedQuantity;
+    // private void updateStock( List<ProductVariant> productVariants, Map<Long, OrderItemRequest> variantDtoMap) {
+    //     for(ProductVariant productVariant : productVariants){
+    //         Integer requestedQuantity = variantDtoMap.get(productVariant.getId()).getQuantity();
+    //         int newStock = productVariant.getStock() - requestedQuantity;
 
-            productVariant.setStock(newStock);
-            log.info("Updated stock for variant ID: {}, new stock: {}", productVariant.getId(), newStock);
-        }
+    //         productVariant.setStock(newStock);
+    //         log.info("Updated stock for variant ID: {}, new stock: {}", productVariant.getId(), newStock);
+    //     }
 
-        productService.saveAllProductVariant(productVariants);
+    //     productService.saveAllProductVariant(productVariants);
+    // }
+
+    private void restock(Order order) {
+        // ❌ tránh restock 2 lần
+    if (order.isRestocked()) {
+        log.warn("Order {} already restocked, skip", order.getId());
+        return;
     }
 
+    for (OrderItem item : order.getOrderItems()) {
+        Long variantId = item.getProductVariant().getId();
+        int qty = item.getQuantity();
+
+        productService.increaseStock(variantId, qty);
+
+        log.info("Restocked variantId={}, qty={}", variantId, qty);
+    }
+
+    order.setRestocked(true);
+}
+
+    private boolean isValidTransition(OrderStatus current, OrderStatus next) {
+
+        return switch (current) {
+            case PENDING ->
+                next == OrderStatus.CONFIRMED || next == OrderStatus.CANCELED;
+
+            case CONFIRMED ->
+                next == OrderStatus.ON_DELIVERY || next == OrderStatus.CANCELED;
+
+            case ON_DELIVERY ->
+                next == OrderStatus.DELIVERED;
+
+            default -> false;
+        };
+    }
     // Optimistic lock
     private void updateStockOptimistic( List<ProductVariant> productVariants, Map<Long, OrderItemRequest> variantDtoMap) {
         for(ProductVariant productVariant : productVariants){
@@ -258,33 +296,77 @@ Integer requestedQuantity =
     public List<BaseOrderResponse> getMyOrders() {
         String userId = JwtUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new BadCredentialsException("User is not authenticated"));
- 
-        List<Order> orders = orderRepository.findByUserId(Long.parseLong(userId));
-        return orders.stream()
-                .map(o -> modelMapper.map(o, BaseOrderResponse.class))
-                .collect(Collectors.toList());
+
+        List<Order> orders = orderRepository.findByUserIdWithItems(Long.parseLong(userId));
+
+        return orders.stream().map(order -> {
+
+            BaseOrderResponse res = modelMapper.map(order, BaseOrderResponse.class);
+
+            List<OrderItemResponse> items = order.getOrderItems().stream().map(item -> {
+
+                OrderItemResponse dto = modelMapper.map(item, OrderItemResponse.class);
+
+                // ✅ SET IMAGE URL
+                if (item.getProductVariant() != null &&
+                    item.getProductVariant().getProduct() != null) {
+
+                    dto.setImageUrl(item.getProductVariant().getProduct().getImageUrl());
+                }
+
+                return dto;
+            }).collect(Collectors.toList());
+
+            res.setOrderItems(items);
+
+            return res;
+
+        }).collect(Collectors.toList());
     }
- 
+
     @Override
     public BaseOrderResponse getOrderById(Long id) {
-        Order order = orderRepository.findById(id)
+        Order order = orderRepository.findOrderByIdWithItems(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
-        return modelMapper.map(order, BaseOrderResponse.class);
+
+        BaseOrderResponse res = modelMapper.map(order, BaseOrderResponse.class);
+
+        List<OrderItemResponse> items = order.getOrderItems().stream().map(item -> {
+
+            OrderItemResponse dto = modelMapper.map(item, OrderItemResponse.class);
+
+            if (item.getProductVariant() != null &&
+                item.getProductVariant().getProduct() != null) {
+
+                dto.setImageUrl(item.getProductVariant().getProduct().getImageUrl());
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        res.setOrderItems(items);
+
+        return res;
     }
+
  
     @Override
     @Transactional
     public BaseOrderResponse cancelOrder(Long id) {
+
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
- 
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
         if (!order.getOrderStatus().equals(OrderStatus.PENDING)) {
-            throw new IllegalArgumentException("Cannot cancel order with status: " + order.getOrderStatus());
+            throw new IllegalArgumentException("Chỉ được hủy đơn ở trạng thái PENDING");
         }
- 
+
+        // ✅ RESTOCK
+        restock(order);
+
         order.setOrderStatus(OrderStatus.CANCELED);
-        Order saved = orderRepository.save(order);
-        return modelMapper.map(saved, BaseOrderResponse.class);
+
+        return modelMapper.map(orderRepository.save(order), BaseOrderResponse.class);
     }
  
     @Override
@@ -303,11 +385,31 @@ Integer requestedQuantity =
     @Override
     @Transactional
     public AdminOrderResponse updateOrderStatus(Long id, String status) {
+
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
-        order.setOrderStatus(OrderStatus.valueOf(status));
-        Order saved = orderRepository.save(order);
-        return modelMapper.map(saved, AdminOrderResponse.class);
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        OrderStatus current = order.getOrderStatus();
+        OrderStatus next = OrderStatus.valueOf(status);
+
+        // ❌ Không cho update nếu đã CANCEL hoặc DELIVERED
+        if (current == OrderStatus.CANCELED || current == OrderStatus.DELIVERED) {
+            throw new IllegalArgumentException("Không thể cập nhật đơn đã hoàn thành hoặc đã hủy");
+        }
+
+        // ✅ Validate flow
+        if (!isValidTransition(current, next)) {
+            throw new IllegalArgumentException("Sai thứ tự trạng thái");
+        }
+
+        // ✅ Nếu chuyển sang CANCEL → restock
+        if (next == OrderStatus.CANCELED) {
+            restock(order);
+        }
+
+        order.setOrderStatus(next);
+
+        return modelMapper.map(orderRepository.save(order), AdminOrderResponse.class);
     }
  
     @Override
@@ -316,14 +418,17 @@ Integer requestedQuantity =
             Long orderId,
             PaymentMethod method
     ) {
-
         Order order = orderRepository
             .findById(orderId)
             .orElseThrow();
+        
+        // ✅ tránh double
+        if (order.getOrderStatus() != OrderStatus.CANCELED) {
+            restock(order);
+        }
 
         order.setPaymentStatus( PaymentStatus.PAYMENT_FAILED);
         order.setOrderStatus(OrderStatus.CANCELED);
-
         orderRepository.save(order);
 }
 }

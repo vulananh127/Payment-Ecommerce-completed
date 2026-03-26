@@ -44,8 +44,12 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-    @OneToMany(mappedBy = "order", orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems;
+
+    @Builder.Default
+    private boolean restocked = false;
+    
     public Order() {}
     public Order(Long orderId){
         this.id = orderId;
@@ -65,4 +69,5 @@ public class Order {
     public void preUpdate() {
         updatedAt = Instant.now();
     }
+    
 }

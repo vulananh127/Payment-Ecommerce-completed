@@ -213,6 +213,8 @@ async function apiCreateProduct(data) {
 // ============================================================
 
 async function apiCreateOrder(data) {
+  console.log("ORDER BODY =", data);
+
   const res = await fetch(`${API_BASE}/orders`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(data) });
   return handleResponse(res);
 }
@@ -267,60 +269,46 @@ function saveCart(cart) {
 }
 
 function addToCart(product, qty = 1, variantId = null) {
-
-  if (!isLoggedIn()) {
-    showToast('Vui lòng đăng nhập để thêm vào giỏ hàng', 'error');
-
-    setTimeout(() => {
-      sessionStorage.setItem(
-        'redirectAfterLogin',
-        window.location.href
-      );
-      window.location.href =
-        '/pages/login.html';
-    }, 1500);
-    return false;
-  }
   const cart = getCart();
-  let price = Number(product.price)|| 0;
+
+  let price = Number(product.price) || 0;
   let image = product.imageUrl || "";
   let name = product.name;
-  // ✅ nếu có variant
+  let sku = "";
+  let stockQuantity = 0;
+  let attributes = {};  // ← thêm
+
   if (variantId && product.variants) {
-
-    const v =
-      product.variants.find(
-        x => x.id === variantId
-      );
-
+    const v = product.variants.find(x => x.id === variantId);
     if (v) {
       price = Number(v.price);
+      sku = v.sku || "";
+      stockQuantity = v.stockQuantity || 0;
+      attributes = v.attributes || {};  // ← thêm
     }
-
   }
-  const key = variantId || product.id;
-  const existing =
-    cart.find(
-      i => (i.variantId || i.id) === key
-    );
+
+  const existing = cart.find(i => i.variantId === variantId);
+
   if (existing) {
     existing.qty += qty;
+    existing.stockQuantity = stockQuantity;
   } else {
     cart.push({
-      id: product.id,
-      variantId: variantId,
-      name: name,
-      price: price,
+      productId: product.id,
+      variantId,
+      name,
+      sku,
+      attributes,        // ← thêm
+      price,
       imageUrl: image,
-      qty: qty
+      qty,
+      stockQuantity
     });
   }
-  saveCart(cart);
-  showToast(
-    `✓ Đã thêm "${product.name}" vào giỏ hàng`
-  );
 
-  return true;
+  saveCart(cart);
+  showToast(`✓ Đã thêm "${product.name}" vào giỏ hàng`);
 }
 
 function removeFromCart(id) { saveCart(getCart().filter(i => i.id !== id)); }
@@ -349,9 +337,18 @@ function getCartTotal() { return getCart().reduce((s, i) => {
   }, 0);
 }
 
+function getCartQuantity(variantId) {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+  const item = cart.find(i => i.variantId === variantId);
+
+  return item ? item.qty  : 0;
+}
+
 function getCartCount() { return getCart().length; }
 
 function buildOrderBody(formData, paymentMethod) {
+    console.log("CART =", getCart());
   const voucher = JSON.parse(localStorage.getItem('voucher') || 'null');
   return {
     receiverName: formData.receiverName,
@@ -368,7 +365,7 @@ function buildOrderBody(formData, paymentMethod) {
       address: formData.address
     },
     productVariants: getCart().map(i => ({
-      variantId: i.variantId || i.id,
+      variantId: i.variantId,
       quantity: i.qty
     })),
     voucherIds: voucher ? [voucher.id] : []

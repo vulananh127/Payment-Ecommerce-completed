@@ -23,9 +23,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -133,64 +135,76 @@ public BaseProductResponse getProductById(Long id) {
     
     @Override
     @Transactional
-    public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) {
+public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) {
 
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+    Product product = productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setImageUrl(request.getImageUrl());
+    product.setName(request.getName());
+    product.setDescription(request.getDescription());
+    product.setImageUrl(request.getImageUrl());
 
-        if (request.getCategoryId() != null) {
-
-            Category category = categoryRepository.findById(
-                    request.getCategoryId()
-            ).orElseThrow();
-
-            product.setCategory(category);
-        }
-
-        if (request.getVariants() != null) {
-
-            product.getProductVariants().clear();
-
-            for (CreateProductVariantRequest v : request.getVariants()) {
-
-                ProductVariant variant = new ProductVariant();
-
-                variant.setSku(generateSku(v.getAttributes()));
-                variant.setPrice(v.getPrice());
-                variant.setStock(v.getStockQuantity());
-
-                variant.setProduct(product);
-                variant.setProductVariantOptions(new HashSet<>());
-
-                if (v.getAttributes() != null) {
-
-                    for (var e : v.getAttributes().entrySet()) {
-
-                        ProductVariantOption opt =
-                                new ProductVariantOption(
-                                        e.getKey(),
-                                        e.getValue()
-                                );
-
-                        opt.setProductVariant(variant);
-
-                        variant.getProductVariantOptions().add(opt);
-                    }
-                }
-
-                product.getProductVariants().add(variant);
-            }
-        }
-
-        Product saved = productRepository.save(product);
-        return mapProduct(saved);
+    if (request.getCategoryId() != null) {
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        product.setCategory(category);
     }
 
-   
+    if (request.getVariants() != null) {
+    Map<String, ProductVariant> existingBySku = product.getProductVariants()
+            .stream()
+            .filter(ProductVariant::isActive)
+            .collect(Collectors.toMap(ProductVariant::getSku, v -> v));
+
+    Set<String> requestedSkus = request.getVariants().stream()
+            .map(v -> generateSku(v.getAttributes()))
+            .collect(Collectors.toSet());
+
+    // ✅ Dùng Iterator để tránh ConcurrentModificationException
+    Iterator<ProductVariant> iterator = product.getProductVariants().iterator();
+    while (iterator.hasNext()) {
+        ProductVariant existing = iterator.next();
+        if (existing.isActive() && !requestedSkus.contains(existing.getSku())) {
+            if (productVariantRepository.existsInOrderItem(existing.getId())) {
+                existing.setActive(false); // đã bán → chỉ ẩn
+            } else {
+                iterator.remove(); // chưa bán → orphanRemoval xóa hẳn
+            }
+        }
+    }
+
+    for (CreateProductVariantRequest v : request.getVariants()) {
+        String sku = generateSku(v.getAttributes());
+        ProductVariant existing = existingBySku.get(sku);
+
+        if (existing != null) {
+            existing.setPrice(v.getPrice());
+            existing.setStock(v.getStockQuantity());
+        } else {
+            ProductVariant newVariant = new ProductVariant();
+            newVariant.setSku(sku);
+            newVariant.setPrice(v.getPrice());
+            newVariant.setStock(v.getStockQuantity());
+            newVariant.setActive(true);
+            newVariant.setProduct(product);
+            newVariant.setProductVariantOptions(new HashSet<>());
+
+            if (v.getAttributes() != null) {
+                for (var e : v.getAttributes().entrySet()) {
+                    ProductVariantOption opt = new ProductVariantOption(e.getKey(), e.getValue());
+                    opt.setProductVariant(newVariant);
+                    newVariant.getProductVariantOptions().add(opt);
+                }
+            }
+            product.getProductVariants().add(newVariant);
+        }
+    }
+}
+    
+
+    Product saved = productRepository.save(product);
+    return mapProduct(saved);
+}
 
     private String generateSku(Map<String, String> attrs) {
     if (attrs == null || attrs.isEmpty()) {
@@ -219,60 +233,29 @@ public BaseProductResponse getProductById(Long id) {
         }
         // ===== variants =====
         if (product.getProductVariants() != null) {
-            List<ProductVariantResponse> list =
-                    product.getProductVariants()
-                            .stream()
-                            .map(v -> {
-
-                                ProductVariantResponse r =
-                                        new ProductVariantResponse();
-
-                                r.setId(v.getId());
-
-                                r.setSku(v.getSku());
-
-                                r.setPrice(v.getPrice());
-
-                                r.setStockQuantity(
-                                        v.getStock()
-                                );
-
-                                Map<String, String> attrs =
-                                        v.getProductVariantOptions()
-                                                .stream()
-                                                .collect(
-                                                        Collectors.toMap(
-                                                                o -> o.getAttribute(),
-                                                                o -> o.getValue()
-                                                        )
-                                                );
-
-                                r.setAttributes(attrs);
-
-                                return r;
-
-                            })
-                            .toList();
-
-            res.setVariants(list);
-
-            // ===== price + stock lấy từ variant đầu =====
-
-            if (!product.getProductVariants().isEmpty()) {
-
-                List<ProductVariant> list1 =
-                    new ArrayList<>(product.getProductVariants());
-
-                ProductVariant v = list1.get(0);
-                // ProductVariant v =
-                //         product.getProductVariants().get(0);
-
-                res.setPrice(v.getPrice());
-
-                res.setStockQuantity(
-                        v.getStock()
-                );
-            }
+        List<ProductVariantResponse> list = product.getProductVariants()
+                .stream()
+                .filter(ProductVariant::isActive) // ← CHỈ trả active variant
+                .map(v -> {
+                    ProductVariantResponse r = new ProductVariantResponse();
+                    r.setId(v.getId());
+                    r.setSku(v.getSku());
+                    r.setPrice(v.getPrice());
+                    r.setStockQuantity(v.getStock());
+                    Map<String, String> attrs = v.getProductVariantOptions().stream()
+                            .collect(Collectors.toMap(
+                                    ProductVariantOption::getAttribute,
+                                    ProductVariantOption::getValue));
+                    r.setAttributes(attrs);
+                    return r;
+                })
+                .toList();
+        res.setVariants(list);
+        // price + stock lấy từ variant active đầu tiên
+        list.stream().findFirst().ifPresent(v -> {
+            res.setPrice(v.getPrice());
+            res.setStockQuantity(v.getStockQuantity());
+        });
         }
 
         return res;
@@ -284,6 +267,11 @@ public BaseProductResponse getProductById(Long id) {
         if (!productRepository.existsById(id)) {
             throw new RuntimeException("Product not found: " + id);
         }
+        boolean hasOrder = productRepository.existsByProductId(id);
+
+    if (hasOrder) {
+        throw new RuntimeException("Sản phẩm tồn tại trong lịch sử đơn hàng, không thể xóa");
+    }
         productRepository.deleteById(id);
     }
 
@@ -309,7 +297,25 @@ public BaseProductResponse getProductById(Long id) {
     }
 
     @Override
+public List<ProductVariant> findAllProductVariantByVariantIdWithProduct(List<Long> variantIds) {
+    return productVariantRepository.findAllByIdWithProduct(variantIds);
+}
+
+    @Override
     public int updateStockOptimistic(Long variantId, Integer requestQuantity) {
         return productVariantRepository.updateStockConditionally(variantId, requestQuantity);
+    }
+
+    @Override
+    @Transactional
+    public void increaseStock(Long variantId, Integer qty) {
+
+        int updated = productVariantRepository.increaseStock(variantId, qty);
+
+        if (updated == 0) {
+            throw new RuntimeException("Variant not found: " + variantId);
+        }
+
+        log.info("Increase stock variantId={}, +{}", variantId, qty);
     }
 }

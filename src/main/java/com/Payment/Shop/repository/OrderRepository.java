@@ -18,9 +18,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "WHERE o.id = :orderId")
     Optional<Order> findOrderByIdWithItems(@Param("orderId") Long orderId);
 
-    // Thêm mới - lấy đơn hàng của 1 user
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
-    List<Order> findByUserId(@Param("userId") Long userId);
+    // lấy đơn hàng của 1 user
+    @Query("SELECT DISTINCT o FROM Order o " +
+       "LEFT JOIN FETCH o.orderItems i " +
+       "LEFT JOIN FETCH i.productVariant v " +
+       "LEFT JOIN FETCH v.product " +
+       "WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
+List<Order> findByUserIdWithItems(@Param("userId") Long userId);
 
     // Thêm mới - lọc theo status
     List<Order> findByOrderStatus(OrderStatus status);
@@ -28,4 +32,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Lấy tất cả có orderItems
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderItems ORDER BY o.createdAt DESC")
     List<Order> findAllWithItems();
+
+    
 }

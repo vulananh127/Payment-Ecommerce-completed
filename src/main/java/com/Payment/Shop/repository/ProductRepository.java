@@ -2,6 +2,7 @@ package com.Payment.Shop.repository;
 
 import com.Payment.Shop.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -32,5 +33,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         ORDER BY p.id DESC
     """)
     List<Product> findAllWithVariants();
+
+    @Query("""
+    SELECT COUNT(oi) > 0
+    FROM OrderItem oi
+    WHERE oi.productVariant.product.id = :productId
+""")
+boolean existsByProductId(@Param("productId") Long productId);
+
 
 }

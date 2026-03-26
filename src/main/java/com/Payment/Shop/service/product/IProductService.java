@@ -21,4 +21,7 @@ public interface IProductService {
     BaseProductResponse getProductById(Long id);
     BaseProductResponse updateProduct(Long id, UpdateProductRequest request);
     void deleteProduct(Long id);
+
+    void increaseStock(Long variantId, Integer qty);
+    List<ProductVariant> findAllProductVariantByVariantIdWithProduct(List<Long> variantIds);
 }

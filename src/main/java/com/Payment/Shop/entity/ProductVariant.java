@@ -25,6 +25,10 @@ public class ProductVariant {
     private String sku;
     private int stock;
     private BigDecimal price;
+    
+    @Builder.Default
+    private boolean active = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;

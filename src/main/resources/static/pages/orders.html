@@ -7,59 +7,214 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; color:#111; }
-    nav { background:#fff; border-bottom:1px solid #eee; padding:0 2rem; display:flex; align-items:center; gap:1rem; height:60px; }
+
+    /* NAV */
+    nav {
+      background:#fff; border-bottom:1px solid #eee;
+      padding:0 2rem; display:flex; align-items:center;
+      gap:1rem; height:60px; position:sticky; top:0; z-index:100;
+    }
     .logo { font-size:1.4rem; font-weight:700; color:#111; text-decoration:none; margin-right:auto; }
     .logo span { color:#e53935; }
-    .nav-btn { text-decoration:none; color:#111; font-size:0.875rem; padding:0.4rem 0.8rem; border-radius:6px; border:1px solid #ddd; }
+    .nav-btn {
+      text-decoration:none; color:#111; font-size:0.875rem;
+      padding:0.4rem 0.8rem; border-radius:6px; border:1px solid #ddd;
+      transition:background 0.2s;
+    }
+    .nav-btn:hover { background:#f5f5f5; }
+
+    /* MAIN */
     .main { max-width:900px; margin:2rem auto; padding:0 2rem; }
     h1 { font-size:1.4rem; font-weight:600; margin-bottom:1.5rem; }
-    .tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
-    .tab { padding:0.5rem 1rem; border:1px solid #ddd; border-radius:20px; font-size:0.875rem; cursor:pointer; background:#fff; transition:all 0.2s; }
-    .tab.active { background:#111; color:#fff; border-color:#111; }
-    .filters { display:flex; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items:center; }
-    .filters input { padding:0.6rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff; flex:1; min-width:200px; }
-    .filter-btn { padding:0.5rem 1rem; border:1px solid #ddd; border-radius:20px; font-size:0.8rem; cursor:pointer; background:#fff; transition:all 0.2s; }
+
+    /* FILTERS */
+    .filters {
+      display:flex; gap:0.5rem; margin-bottom:1.5rem;
+      flex-wrap:wrap; align-items:center;
+    }
+    .filters input {
+      padding:0.55rem 1rem; border:1px solid #ddd; border-radius:8px;
+      font-size:0.875rem; outline:none; flex:1; min-width:200px;
+    }
+    .filters input:focus { border-color:#111; }
+    .filter-btn {
+      padding:0.45rem 1rem; border:1px solid #ddd; border-radius:20px;
+      font-size:0.8rem; cursor:pointer; background:#fff; transition:all 0.2s;
+      white-space:nowrap;
+    }
     .filter-btn.active { background:#111; color:#fff; border-color:#111; }
-    .order-card { background:#fff; border-radius:12px; border:1px solid #eee; padding:1.25rem; margin-bottom:1rem; }
-    .order-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem; }
-    .order-id { font-size:0.875rem; color:#888; }
-    .order-date { font-size:0.8rem; color:#aaa; }
-    .status-badge { padding:0.3rem 0.8rem; border-radius:20px; font-size:0.8rem; font-weight:600; }
-    .status-PENDING { background:#fff8e1; color:#f57f17; }
-    .status-ON_DELIVERY { background:#e3f2fd; color:#1565c0; }
-    .status-DELIVERED { background:#e8f5e9; color:#2e7d32; }
-    .status-CANCELED { background:#fff3f3; color:#c62828; }
-    .pay-badge { font-size:0.75rem; padding:0.2rem 0.6rem; border-radius:10px; margin-left:0.5rem; }
-    .pay-PAYMENT_COMPLETED { background:#e8f5e9; color:#2e7d32; }
-    .pay-PAYMENT_PROCESSING { background:#fff8e1; color:#f57f17; }
-    .pay-PAYMENT_FAILED { background:#fff3f3; color:#c62828; }
-    .order-items { border-top:1px solid #f0f0f0; padding-top:1rem; }
-    .order-item { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; }
-    .order-footer { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f0; padding-top:1rem; margin-top:0.75rem; flex-wrap:wrap; gap:0.5rem; }
-    .order-total { font-weight:700; }
-    .order-total span { color:#e53935; }
-    .action-btn { padding:0.4rem 1rem; border:1px solid #ddd; border-radius:6px; font-size:0.85rem; cursor:pointe; }
+
+    /* ORDER CARD */
+    .order-card {
+      background:#fff; border-radius:12px; border:1px solid #eee;
+      padding:1.25rem; margin-bottom:1rem;
+      transition:box-shadow 0.2s;
+    }
+    .order-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.06); }
+
+    .order-header {
+      display:flex; align-items:flex-start;
+      justify-content:space-between; margin-bottom:1rem;
+      flex-wrap:wrap; gap:0.5rem;
+    }
+    .order-meta { display:flex; flex-direction:column; gap:0.25rem; }
+    .order-id { font-size:0.875rem; font-weight:600; }
+    .order-date { font-size:0.78rem; color:#aaa; }
+
+    .order-badges { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+
+    /* Status badges */
+    .status-badge {
+      padding:0.3rem 0.8rem; border-radius:20px;
+      font-size:0.78rem; font-weight:600; white-space:nowrap;
+    }
+    .status-PENDING       { background:#fff8e1; color:#f57f17; }
+    .status-CONFIRMED     { background:#e8f5e9; color:#2e7d32; }
+    .status-ON_DELIVERY   { background:#e3f2fd; color:#1565c0; }
+    .status-DELIVERED     { background:#e8f5e9; color:#1b5e20; }
+    .status-CANCELED      { background:#fff3f3; color:#c62828; }
+
+    /* Payment badges */
+    .pay-badge {
+      font-size:0.72rem; padding:0.2rem 0.6rem;
+      border-radius:10px; white-space:nowrap;
+    }
+    .pay-UNPAID              { background:#f5f5f5; color:#888; }
+    .pay-PAYMENT_PROCESSING  { background:#fff8e1; color:#f57f17; }
+    .pay-PAYMENT_COMPLETED   { background:#e8f5e9; color:#2e7d32; }
+    .pay-PAYMENT_FAILED      { background:#fff3f3; color:#c62828; }
+
+    /* PREVIEW: ảnh placeholder + tên variant đầu */
+    .order-preview {
+      display:flex; align-items:center; gap:0.75rem;
+      padding:0.75rem 0; border-top:1px solid #f0f0f0;
+    }
+    .preview-img {
+      width:56px; height:56px; border-radius:8px;
+      background:#f0f0f0; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.4rem; color:#ccc;
+    }
+    .preview-info { flex:1; min-width:0; }
+    .preview-name { font-size:0.875rem; font-weight:500; margin-bottom:0.15rem; }
+    .preview-variant { font-size:0.78rem; color:#888; margin-bottom:0.15rem; }
+    .preview-sub {
+      font-size:0.78rem; color:#aaa; font-style:italic;
+    }
+    .preview-price { font-size:0.875rem; font-weight:600; color:#e53935; flex-shrink:0; }
+
+    /* FOOTER */
+    .order-footer {
+      display:flex; align-items:center; justify-content:space-between;
+      border-top:1px solid #f0f0f0; padding-top:1rem; margin-top:0.75rem;
+      flex-wrap:wrap; gap:0.75rem;
+    }
+    .footer-summary { display:flex; flex-direction:column; gap:0.2rem; }
+    .total-qty { font-size:0.8rem; color:#888; }
+    .total-amount { font-weight:700; font-size:1rem; }
+    .total-amount span { color:#e53935; }
+    .footer-actions { display:flex; gap:0.5rem; flex-wrap:wrap; }
+
+    .action-btn {
+      padding:0.4rem 1rem; border:1px solid #ddd; border-radius:6px;
+      font-size:0.85rem; cursor:pointer; background:#fff;
+      transition:all 0.2s; font-family:inherit;
+    }
     .action-btn:hover { background:#f5f5f5; }
-    .cancel-btn { color: #fff; background: #e53935; border-color: #e53935;}
-    .cancel-btn:hover { background: #c62828; border-color: #c62828; }
-    .retry-btn { color:#1565c0; border-color:#1565c0; }
-    .retry-btn:hover { background:#e3f2fd; }
-    .empty { text-align:center; padding:4rem; color:#888; }
-    .loading { text-align:center; padding:3rem; color:#888; }
+    .cancel-btn { color:#e53935; border-color:#e53935; }
+    .cancel-btn:hover { background:#fff3f3; }
+    .detail-btn { color:#111; border-color:#111; font-weight:500; }
+    .detail-btn:hover { background:#f5f5f5; }
+
+    /* EMPTY / LOADING */
+    .empty   { text-align:center; padding:4rem; color:#888; font-size:0.95rem; }
+    .loading { text-align:center; padding:3rem; color:#aaa; }
+
+    /* ── MODAL ─────────────────────────────────────────────── */
+    .modal-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.45); z-index:300;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .modal-overlay.show { display:flex; }
+    .modal {
+      background:#fff; border-radius:16px; width:100%;
+      max-width:640px; max-height:90vh; overflow-y:auto;
+      padding:2rem; position:relative;
+    }
+    .modal-header {
+      display:flex; justify-content:space-between;
+      align-items:flex-start; margin-bottom:1.5rem;
+    }
+    .modal-title { font-size:1.1rem; font-weight:600; }
+    .modal-sub   { font-size:0.8rem; color:#aaa; margin-top:0.2rem; }
+    .close-btn {
+      background:none; border:none; font-size:1.5rem;
+      cursor:pointer; color:#aaa; line-height:1; padding:0;
+      flex-shrink:0;
+    }
+    .close-btn:hover { color:#111; }
+
+    /* Modal sections */
+    .modal-section { margin-bottom:1.5rem; }
+    .modal-section-title {
+      font-size:0.75rem; font-weight:600; color:#888;
+      text-transform:uppercase; letter-spacing:0.05em;
+      margin-bottom:0.75rem;
+    }
+    .info-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:0.6rem 1rem;
+    }
+    .info-item { font-size:0.875rem; }
+    .info-label { color:#888; font-size:0.78rem; margin-bottom:0.15rem; }
+    .info-value { font-weight:500; }
+
+    /* Modal order items */
+    .modal-item {
+      display:flex; align-items:flex-start; gap:0.75rem;
+      padding:0.75rem 0; border-bottom:1px solid #f5f5f5;
+    }
+    .modal-item:last-child { border-bottom:none; }
+    .modal-item-img {
+      width:48px; height:48px; border-radius:6px;
+      background:#f0f0f0; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.2rem; color:#ccc;
+    }
+    .modal-item-info { flex:1; min-width:0; }
+    .modal-item-name    { font-size:0.875rem; font-weight:500; margin-bottom:0.15rem; }
+    .modal-item-variant { font-size:0.78rem; color:#888; margin-bottom:0.15rem; }
+    .modal-item-qty     { font-size:0.78rem; color:#aaa; }
+    .modal-item-price   { font-size:0.875rem; font-weight:600; flex-shrink:0; }
+
+    /* Modal summary */
+    .modal-summary { border-top:1px solid #eee; padding-top:1rem; }
+    .modal-sum-row {
+      display:flex; justify-content:space-between;
+      font-size:0.875rem; padding:0.35rem 0; color:#555;
+    }
+    .modal-sum-row.total {
+      font-weight:700; font-size:1rem; color:#111;
+      border-top:1px solid #eee; margin-top:0.35rem; padding-top:0.75rem;
+    }
+    .modal-sum-row.total span { color:#e53935; }
   </style>
 </head>
 <body>
+
 <nav>
-  <a href="/" class="logo">Shop<span>VLA</span></a>
+  <a href="/index.html" class="logo">Shop<span>VLA</span></a>
   <span id="userName" style="font-size:0.875rem; color:#555;"></span>
-  <a href="/" class="nav-btn">← Tiếp tục mua sắm</a>
-  <!-- <a href="#" class="nav-btn" id="logoutBtn" style="color:#e53935; border-color:#e53935;">Đăng xuất</a> -->
+  <a href="/index.html" class="nav-btn">← Tiếp tục mua sắm</a>
 </nav>
 
 <div class="main">
   <h1>Đơn hàng của tôi</h1>
+
   <div class="filters">
-    <input type="text" id="searchInput" placeholder="Tìm theo tên, email, ID..." oninput="filterOrders()" />
+    <input type="text" id="searchInput"
+           placeholder="Tìm theo mã đơn, sản phẩm..."
+           oninput="filterOrders()"/>
     <button class="filter-btn active" onclick="setStatus(null, this)">Tất cả</button>
     <button class="filter-btn" onclick="setStatus('PENDING', this)">Chờ xử lý</button>
     <button class="filter-btn" onclick="setStatus('CONFIRMED', this)">Đã xác nhận</button>
@@ -67,39 +222,70 @@
     <button class="filter-btn" onclick="setStatus('DELIVERED', this)">Đã giao</button>
     <button class="filter-btn" onclick="setStatus('CANCELED', this)">Đã hủy</button>
   </div>
+
   <div id="orderList"><div class="loading">Đang tải đơn hàng...</div></div>
+</div>
+
+<!-- ── MODAL CHI TIẾT ───────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay"
+     onclick="if(event.target===this) closeModal()">
+  <div class="modal" id="modalContent"></div>
 </div>
 
 <script src="/js/api.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  // ── Labels ────────────────────────────────────────────────
+  const STATUS_LABEL = {
+    PENDING:     'Chờ xử lý',
+    CONFIRMED:   'Đã xác nhận',
+    ON_DELIVERY: 'Đang giao',
+    DELIVERED:   'Đã giao',
+    CANCELED:    'Đã hủy'
+  };
+  const PAY_LABEL = {
+    UNPAID:              'Chưa thanh toán (COD)',
+    PAYMENT_PROCESSING:  'Chờ thanh toán',
+    PAYMENT_COMPLETED:   'Đã thanh toán',
+    PAYMENT_FAILED:      'Thanh toán lỗi'
+  };
+  const PAY_METHOD_LABEL = {
+    COD:    'Tiền mặt (COD)',
+    VNPAY:  'VNPay',
+    STRIPE: 'Stripe'
+  };
 
-  if (!guardLogin()) return;
-
-  const params = new URLSearchParams(window.location.search);
-  const status = params.get("status");
-
-  if (status === "success") {
-    showToast("Thanh toán thành công");
-  }
-
-  if (status === "fail") {
-    showToast("Thanh toán thất bại", "error");
-  }
-
-  if (status) {
-    window.history.replaceState({}, document.title, "/pages/orders.html");
-  }
-
-  loadOrders();
-});
-
-  let allOrders = [];
+  let allOrders    = [];
   let statusFilter = null;
-  const statusLabel = { PENDING:'Chờ xử lý', CONFIRMED:'Đã xác nhận', ON_DELIVERY:'Đang giao', DELIVERED:'Đã giao', CANCELED:'Đã hủy' };
-  const payLabel = { UNPAID: 'COD', PAYMENT_COMPLETED:'Đã thanh toán', PAYMENT_PROCESSING:'Chờ thanh toán', PAYMENT_FAILED:'Thanh toán lỗi' };
 
-   function setStatus(status, btn) {
+  // ── Init ──────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!guardLogin()) return;
+
+    const user = getUser();
+    if (user?.name) document.getElementById('userName').textContent = `Xin chào, ${user.name}`;
+
+    // Toast từ redirect VNPAY
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    if (status === 'success') showToast('✓ Thanh toán thành công');
+    if (status === 'fail')    showToast('Thanh toán thất bại', 'error');
+    if (status) window.history.replaceState({}, '', '/pages/orders.html');
+
+    loadOrders();
+  });
+
+  // ── Load & filter ─────────────────────────────────────────
+  async function loadOrders() {
+    try {
+      allOrders = await apiGetMyOrders();
+      filterOrders();
+    } catch {
+      document.getElementById('orderList').innerHTML =
+        '<div class="empty">Không thể tải đơn hàng.</div>';
+    }
+  }
+
+  function setStatus(status, btn) {
     statusFilter = status;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -108,50 +294,97 @@
 
   function filterOrders() {
     const kw = document.getElementById('searchInput').value.toLowerCase();
-    let filtered = statusFilter ? allOrders.filter(o => o.orderStatus === statusFilter) : allOrders;
-    if (kw) filtered = filtered.filter(o =>
-      String(o.orderId).includes(kw) ||
-      (o.receiverName||'').toLowerCase().includes(kw) ||
-      (o.email||'').toLowerCase().includes(kw)
+    let list = statusFilter
+      ? allOrders.filter(o => o.orderStatus === statusFilter)
+      : [...allOrders];
+
+    if (kw) list = list.filter(o =>
+      String(o.id || o.orderId).includes(kw) ||
+      (o.receiverName || '').toLowerCase().includes(kw) ||
+      // ✅ tìm theo productName trong orderItems
+      (o.orderItems || []).some(item =>
+        (item.productName || '').toLowerCase().includes(kw)
+      )
     );
-    renderOrders(filtered);
+    renderOrders(list);
   }
 
+  // ── Render danh sách ──────────────────────────────────────
   function renderOrders(orders) {
     const container = document.getElementById('orderList');
     if (!orders.length) {
-      container.innerHTML = '<div class="empty">📋<br><br>Không có đơn hàng nào.</div>'; return;
+      container.innerHTML = '<div class="empty">📋<br><br>Không có đơn hàng nào.</div>';
+      return;
     }
-    container.innerHTML = orders.map(o => `
-      <div class="order-card">
-        <div class="order-header">
-          <div>
-            <span class="order-id">Đơn hàng #${o.orderId}</span>
-            <span class="pay-badge pay-${o.paymentStatus}">${payLabel[o.paymentStatus] || ''}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.75rem;">
-            <span class="order-date">${formatDate(o.createdAt)}</span>
-            <span class="status-badge status-${o.orderStatus}">${statusLabel[o.orderStatus] || o.orderStatus}</span>
-          </div>
-        </div>
-        <div class="order-items">
-          ${(o.orderItems || []).map(item => `
-            <div class="order-item">
-              <div style="flex:1; font-size:0.875rem;">${item.productVariant?.product?.name || 'Sản phẩm'}</div>
-              <span style="font-size:0.8rem; color:#888;">x${item.quantity}</span>
-              <span style="font-weight:600; font-size:0.875rem;">${formatPrice(item.totalPrice)}</span>
-            </div>`).join('')}
-        </div>
-        <div class="order-footer">
-          <div class="order-total">Tổng: <span>${formatPrice(o.totalAmount)}</span></div>
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            ${o.orderStatus === 'PENDING' ? `<button class="action-btn cancel-btn" onclick="cancelOrder(${o.id})">Hủy đơn</button>` : ''}
-            <button class="action-btn" onclick="viewOrder(${o.orderId})">Chi tiết</button>
-          </div>
-        </div>
-      </div>`).join('');
+    container.innerHTML = orders.map(o => renderOrderCard(o)).join('');
   }
 
+  function renderOrderCard(o) {
+    const orderId = o.id || o.orderId;
+    const items   = o.orderItems || [];
+
+    // Tổng số lượng sản phẩm
+    const totalQty = items.reduce((s, i) => s + (i.quantity || 0), 0);
+
+    // Preview: item đầu tiên
+    const first = items[0];
+    const hasMore = items.length > 1;
+
+    const previewHtml = first ? `
+      <div class="order-preview">
+        <div class="preview-img">
+          <img src="${first.imageUrl}" 
+       alt="product" >
+       </div>
+        <div class="preview-info">
+          <div class="preview-name">${first.productName || 'Sản phẩm'}</div>
+          ${first.variantName && first.variantName !== 'DEFAULT'
+            ? `<div class="preview-variant">${first.variantName}</div>` : ''}
+          <div class="preview-sub">
+            x${first.quantity} · ${formatPrice(first.unitPrice)}
+            ${hasMore ? `<span style="margin-left:0.5rem; color:#aaa;">+${items.length - 1} sản phẩm khác...</span>` : ''}
+          </div>
+        </div>
+        <div class="preview-price">${formatPrice(first.totalPrice)}</div>
+      </div>` : '';
+
+    const canCancel = o.orderStatus === 'PENDING';
+
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <div class="order-meta">
+            <div class="order-id">Đơn hàng #${orderId}</div>
+            <div class="order-date">${formatDate(o.createdAt)}</div>
+          </div>
+          <div class="order-badges">
+            <span class="status-badge status-${o.orderStatus}">
+              ${STATUS_LABEL[o.orderStatus] || o.orderStatus}
+            </span>
+            <span class="pay-badge pay-${o.paymentStatus}">
+              ${PAY_LABEL[o.paymentStatus] || o.paymentStatus || ''}
+            </span>
+          </div>
+        </div>
+
+        ${previewHtml}
+
+        <div class="order-footer">
+          <div class="footer-summary">
+            <div class="total-qty">Tổng ${totalQty} sản phẩm</div>
+            <div class="total-amount">Tổng tiền: <span>${formatPrice(o.totalAmount)}</span></div>
+          </div>
+          <div class="footer-actions">
+            ${canCancel
+              ? `<button class="action-btn cancel-btn" onclick="cancelOrder(${orderId})">Hủy đơn</button>`
+              : ''}
+            <button class="action-btn detail-btn" onclick="openModal(${orderId})">Xem chi tiết</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Hủy đơn ──────────────────────────────────────────────
   async function cancelOrder(orderId) {
     if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
     try {
@@ -163,15 +396,140 @@
     }
   }
 
-  async function loadOrders() {
-    try {
-      allOrders = await apiGetMyOrders();
-      renderOrders(allOrders);
-    } catch (err) {
-      document.getElementById('orderList').innerHTML = '<div class="empty">Không thể tải đơn hàng.</div>';
-    }
+  // ── Modal chi tiết ────────────────────────────────────────
+  function openModal(orderId) {
+    const o = allOrders.find(x => (x.id || x.orderId) === orderId);
+    if (!o) return;
+
+    const items    = o.orderItems || [];
+    const totalQty = items.reduce((s, i) => s + (i.quantity || 0), 0);
+
+    // Địa chỉ
+    const addrObj = o.address || {};
+
+    const addr = [
+      addrObj.address,
+      addrObj.commune,
+      addrObj.district,
+      addrObj.province
+    ].filter(Boolean).join(', ');
+
+    // Items HTML
+    const itemsHtml = items.map(item => `
+      <div class="modal-item">
+        <div class="modal-item-img">
+          <img src="${item.imageUrl || '/images/no-image.png'}"
+       alt="product">
+          </div>
+        <div class="modal-item-info">
+          <div class="modal-item-name">${item.productName || 'Sản phẩm'}</div>
+          ${item.variantName && item.variantName !== 'DEFAULT'
+            ? `<div class="modal-item-variant">Phân loại: ${item.variantName}</div>` : ''}
+          <div class="modal-item-qty">
+            x${item.quantity} · Đơn giá: ${formatPrice(item.unitPrice)}
+          </div>
+        </div>
+        <div class="modal-item-price">${formatPrice(item.totalPrice)}</div>
+      </div>`).join('');
+
+    const subtotal   = items.reduce((s, i) => s + (i.totalPrice || 0), 0);
+    const shippingFee = o.shippingFee || 0;
+
+    document.getElementById('modalContent').innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Chi tiết đơn hàng #${o.id || o.orderId}</div>
+          <div class="modal-sub">${formatDate(o.createdAt)}</div>
+        </div>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+
+      <!-- Trạng thái -->
+      <div class="modal-section">
+        <div class="modal-section-title">Trạng thái</div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <span class="status-badge status-${o.orderStatus}">
+            ${STATUS_LABEL[o.orderStatus] || o.orderStatus}
+          </span>
+          <span class="pay-badge pay-${o.paymentStatus}" style="font-size:0.8rem; padding:0.3rem 0.8rem; border-radius:20px;">
+            ${PAY_LABEL[o.paymentStatus] || ''}
+          </span>
+        </div>
+      </div>
+
+      <!-- Thông tin người nhận -->
+      <div class="modal-section">
+        <div class="modal-section-title">Thông tin giao hàng</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Người nhận</div>
+            <div class="info-value">${o.receiverName || '-'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Số điện thoại</div>
+            <div class="info-value">${o.phone || '-'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value">${o.email || '-'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Phương thức thanh toán</div>
+            <div class="info-value">${PAY_METHOD_LABEL[o.paymentMethod] || o.paymentMethod || '-'}</div>
+          </div>
+          <div class="info-item" style="grid-column:1/-1;">
+            <div class="info-label">Địa chỉ</div>
+            <div class="info-value">${addr || '-'}</div>
+          </div>
+          ${o.note ? `
+          <div class="info-item" style="grid-column:1/-1;">
+            <div class="info-label">Ghi chú</div>
+            <div class="info-value">${o.note}</div>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <!-- Sản phẩm -->
+      <div class="modal-section">
+        <div class="modal-section-title">Sản phẩm (${totalQty} món)</div>
+        ${itemsHtml}
+      </div>
+
+      <!-- Tổng tiền -->
+      <div class="modal-summary">
+        <div class="modal-sum-row">
+          <span>Tạm tính</span><span>${formatPrice(subtotal)}</span>
+        </div>
+        <div class="modal-sum-row">
+          <span>Phí vận chuyển</span>
+          <span>${shippingFee > 0 ? formatPrice(shippingFee) : 'Miễn phí'}</span>
+        </div>
+        <div class="modal-sum-row total">
+          <span>Tổng cộng</span><span>${formatPrice(o.totalAmount)}</span>
+        </div>
+      </div>
+
+      ${o.orderStatus === 'PENDING' ? `
+      <button class="action-btn cancel-btn"
+              style="width:100%; margin-top:1rem; padding:0.7rem;"
+              onclick="closeModal(); cancelOrder(${o.id || o.orderId})">
+        Hủy đơn hàng
+      </button>` : ''}
+    `;
+
+    document.getElementById('modalOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
   }
 
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  // Đóng modal bằng ESC
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
 </script>
 </body>
 </html>
