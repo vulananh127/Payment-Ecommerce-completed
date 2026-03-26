@@ -40,7 +40,7 @@ public class BaseOrderResponse {
     protected BigDecimal totalAmount;
 
     protected BigDecimal shippingFee;  // ← thêm
-
+    
     protected LocalDateTime createdAt; // ← thêm
 
     protected LocalDateTime updatedAt; // ← thêm (optional)

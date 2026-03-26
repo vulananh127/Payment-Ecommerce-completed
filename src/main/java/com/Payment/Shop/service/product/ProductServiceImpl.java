@@ -144,6 +144,7 @@ public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) 
     product.setDescription(request.getDescription());
     product.setImageUrl(request.getImageUrl());
 
+
     if (request.getCategoryId() != null) {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -222,6 +223,7 @@ public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) 
         res.setName(product.getName());
         res.setDescription(product.getDescription());
         res.setImageUrl(product.getImageUrl());
+        res.setCreatedAt(product.getCreatedAt());
         // ===== category =====
         if (product.getCategory() != null) {
             CategoryResponse c = new CategoryResponse();

@@ -31,7 +31,6 @@ spring:
             enable: 'true'
           auth: 'true'
 
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -48,7 +47,6 @@ spring:
         format_sql: 'true'
         show_sql: true               # <- bật hiển thị SQL
 
-
   datasource:
     hikari:
       idle-timeout: '60000'
@@ -61,10 +59,8 @@ spring:
     username: ${DB_USER}
     driver-class-name: org.postgresql.Driver
 
-
   application:
     name: Geek-Up
-
 
   servlet:
     multipart:
@@ -96,7 +92,6 @@ resilience4j:
         limit-refresh-period: 10s
         timeout-duration: 3s
 
-
 logging:
   level:
     org.springframework.web: DEBUG
@@ -117,11 +112,6 @@ cloudinary:
 
 payment:
 
-  stripe:
-    secret-key: ${STRIPE_SECRET_KEY}
-    success-url: ${BASE_URL}/api/v1/payments/stripe-callback?session_id={CHECKOUT_SESSION_ID}
-    cancel-url: https://dev.payment.com/order/%s/status
-    
   vnpay:
     tmn-code: ${VNPAY_TMN_CODE}
     secret-key: ${VNPAY_SECRET_KEY}

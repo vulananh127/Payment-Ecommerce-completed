@@ -34,8 +34,6 @@ public class CategoryServiceImpl implements ICategoryService {
                 .collect(Collectors.toList());
     }
  
-
-
     @Override
     public BaseCategoryResponse getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
