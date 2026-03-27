@@ -59,10 +59,7 @@
     @keyframes spin { to { transform:translateY(-50%) rotate(360deg); } }
 
     /* PAYMENT */
-    .payment-methods {
-      display:grid; grid-template-columns:1fr 1fr;
-      gap:0.75rem;
-    }
+    .payment-methods { display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem; }
     .payment-option {
       border:2px solid #eee; border-radius:10px;
       padding:1rem 0.75rem; text-align:center;
@@ -189,6 +186,10 @@
         <div class="payment-option" onclick="selectPayment('VNPAY', this)">
           <div class="payment-icon">🏦</div>
           <div class="payment-name">VNPay</div>
+        </div>
+        <div class="payment-option" onclick="selectPayment('MOMO', this)">
+          <div class="payment-icon" style="color: #a50064;">🌸</div> 
+          <div class="payment-name">Ví MOMO</div>
         </div>
       </div>
     </div>
@@ -434,14 +435,14 @@
       const orderBody = buildOrderBody(formData, selectedPayment);
       const data      = await apiCreateOrder(orderBody);
 
-      if ((selectedPayment === 'VNPAY' || selectedPayment === 'STRIPE') && data) {
+      if ((selectedPayment === 'VNPAY' || selectedPayment === 'MOMO') && data) {
         try {
           const paymentData = await apiCreatePayment({
             orderId: data.orderId || data.id,
             paymentMethod: selectedPayment,
             totalAmount: getCartTotal()
           });
-          const redirectUrl = paymentData.vnpUrl || paymentData.paymentUrl || paymentData.url;
+          const redirectUrl = paymentData.vnpUrl || paymentData.payUrl || paymentData.paymentUrl || paymentData.url;
           if (redirectUrl) {
             clearCart();
             window.location.href = redirectUrl;

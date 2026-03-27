@@ -16,8 +16,11 @@ public class PaymentHandlerContext {
 
     private final VNPayStrategy vnPayStrategy;
 
-    public PaymentHandlerContext(VNPayStrategy vnPayStrategy ) {
+    private final MoMoStrategy moMoStrategy;
+
+    public PaymentHandlerContext(VNPayStrategy vnPayStrategy, MoMoStrategy moMoStrategy ) {
         this.vnPayStrategy = vnPayStrategy;
+        this.moMoStrategy = moMoStrategy;
     }
 
     private PaymentStrategy getPaymentStrategy(PaymentMethod paymentMethod){
@@ -25,7 +28,7 @@ public class PaymentHandlerContext {
         return switch (paymentMethod) {
             case COD -> null;
             case VNPAY -> vnPayStrategy;
-            case MOMO -> null;
+            case MOMO -> moMoStrategy;            
             case BANKING -> null;
             default -> throw new RuntimeException("Unsupported payment method");
         };
