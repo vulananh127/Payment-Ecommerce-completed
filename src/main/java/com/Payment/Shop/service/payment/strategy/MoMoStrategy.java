@@ -28,9 +28,9 @@ public class MoMoStrategy extends PaymentStrategy {
     private static final String SECRET_KEY = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
     private static final String ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create";
     
-    // Cấu hình link FE của Lan Anh (Nhớ sửa lại port cho đúng với web thật)
-    private static final String RETURN_URL = "http://localhost:8080/pages/orders.html"; 
-    private static final String IPN_URL = "https://link-render-cua-may.onrender.com/api/payment/momo-ipn";
+    // Cấu hình link FE 
+    private static final String RETURN_URL = "https://payment-ecommerce-completed.onrender.com/pages/orders.html";
+    private static final String IPN_URL = "https://payment-ecommerce-completed.onrender.com/api/v1/payments/momo_ipn";
 
     @Override
     public MoMoResponse processPayment(PaymentRequest request) {
