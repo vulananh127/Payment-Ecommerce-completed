@@ -17,5 +17,5 @@ public class BaseCategoryResponse {
     private Long id;
     private String categoryName;
     private Instant createdAt;
-    // private Long productCount;
+    private Long productCount;
 }

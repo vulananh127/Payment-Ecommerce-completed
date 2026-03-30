@@ -173,7 +173,7 @@
   <div class="table-card">
     <table>
       <thead>
-        <tr><th>ID</th><th>Khách hàng</th><th>Tổng tiền</th><th>Thanh toán</th><th>Trạng thái</th><th>Ngày đặt</th><th>Thao tác</th></tr>
+        <tr><th>#ID</th><th>Khách hàng</th><th>Tổng tiền</th><th>Thanh toán</th><th>Trạng thái</th><th>Ngày đặt</th><th>Thao tác</th></tr>
       </thead>
       <tbody id="orderTable"><tr><td colspan="7" class="empty">Đang tải...</td></tr></tbody>
     </table>
@@ -292,7 +292,7 @@
     const id = o.id || o.orderId || o.order_id;
     return `
       <tr>
-        <td style="font-weight:600;">${id}</td>
+        <td style="font-weight:600;">#${id}</td>
         <td>
           <div style="font-weight:500;">
             ${o.receiverName || '—'}

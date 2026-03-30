@@ -15,4 +15,11 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     boolean existsByCategoryName(String categoryName);
 
     Optional<Category> findByCategoryName(String categoryName);
+
+    //   // Tính số sản phẩm theo danh mục
+    // @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId")
+    // Long countProductsByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT c.id, COUNT(p) FROM Product p RIGHT JOIN p.category c GROUP BY c.id")
+    List<Object[]> countProductsGroupByCategory();
 }

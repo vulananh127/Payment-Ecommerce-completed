@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
  
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
  
 @Service
@@ -26,13 +27,32 @@ public class CategoryServiceImpl implements ICategoryService {
     private final ModelMapper modelMapper;
     private final CategoryRepository categoryRepository;
  
+    // @Override
+    // public List<BaseCategoryResponse> getAllCategories() {
+    //     return categoryRepository.findAll()
+    //             .stream()
+    //             .map(this::toResponse)
+    //             .collect(Collectors.toList());
+    // }
     @Override
-    public List<BaseCategoryResponse> getAllCategories() {
-        return categoryRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
+public List<BaseCategoryResponse> getAllCategories() {
+    // Lấy map: categoryId -> productCount
+    Map<Long, Long> countMap = categoryRepository.countProductsGroupByCategory()
+            .stream()
+            .collect(Collectors.toMap(
+                    row -> (Long) row[0],
+                    row -> (Long) row[1]
+            ));
+
+    return categoryRepository.findAll()
+            .stream()
+            .map(c -> {
+                BaseCategoryResponse res = modelMapper.map(c, BaseCategoryResponse.class);
+                res.setProductCount(countMap.getOrDefault(c.getId(), 0L));
+                return res;
+            })
+            .collect(Collectors.toList());
+}
  
     @Override
     public BaseCategoryResponse getCategoryById(Long id) {
