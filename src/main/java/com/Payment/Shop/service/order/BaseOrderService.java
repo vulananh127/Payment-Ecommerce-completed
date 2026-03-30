@@ -5,10 +5,10 @@ import com.Payment.Shop.constant.PaymentMethod;
 import com.Payment.Shop.constant.PaymentStatus;
 import com.Payment.Shop.dto.request.CreateOrderRequest;
 import com.Payment.Shop.dto.request.OrderItemRequest;
-import com.Payment.Shop.dto.response.AdminOrderResponse;
+
 import com.Payment.Shop.dto.response.BaseOrderResponse;
 import com.Payment.Shop.dto.response.OrderItemResponse;
-import com.Payment.Shop.dto.response.AdminOrderResponse;
+
 import com.Payment.Shop.entity.Order;
 import com.Payment.Shop.entity.OrderItem;
 import com.Payment.Shop.entity.ProductVariant;
@@ -370,21 +370,34 @@ Integer requestedQuantity =
     }
  
     @Override
-    public List<AdminOrderResponse> getAllOrders(String status) {
+    public List<BaseOrderResponse> getAllOrders(String status) {
         List<Order> orders;
         if (status != null && !status.isEmpty()) {
             orders = orderRepository.findByOrderStatus(OrderStatus.valueOf(status));
         } else {
-            orders = orderRepository.findAll();
+            orders = orderRepository.findAllWithItemsAndProduct();
         }
-        return orders.stream()
-                .map(o -> modelMapper.map(o, AdminOrderResponse.class))
-                .collect(Collectors.toList());
-    }
+         return orders.stream().map(o -> {
+        BaseOrderResponse res = modelMapper.map(o, BaseOrderResponse.class);
+
+        // ✅ Set imageUrl
+        List<OrderItemResponse> items = o.getOrderItems().stream().map(item -> {
+            OrderItemResponse dto = modelMapper.map(item, OrderItemResponse.class);
+            if (item.getProductVariant() != null &&
+                item.getProductVariant().getProduct() != null) {
+                dto.setImageUrl(item.getProductVariant().getProduct().getImageUrl());
+            }
+            return dto;
+        }).collect(Collectors.toList());
+
+        res.setOrderItems(items); // ✅ set vào BaseOrderResponse
+        return res;
+    }).collect(Collectors.toList());
+}
  
     @Override
     @Transactional
-    public AdminOrderResponse updateOrderStatus(Long id, String status) {
+    public BaseOrderResponse updateOrderStatus(Long id, String status) {
 
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
@@ -407,9 +420,14 @@ Integer requestedQuantity =
             restock(order);
         }
 
+        // 
+        if (next == OrderStatus.DELIVERED){
+            markOrderAsPaid(id,order.getPaymentMethod());
+        }
+
         order.setOrderStatus(next);
 
-        return modelMapper.map(orderRepository.save(order), AdminOrderResponse.class);
+        return modelMapper.map(orderRepository.save(order), BaseOrderResponse.class);
     }
  
     @Override

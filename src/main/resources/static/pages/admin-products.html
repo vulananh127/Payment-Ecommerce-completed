@@ -24,9 +24,17 @@
     .btn-edit { background:#f0f4ff; color:#1565c0; border:1px solid #bbcfff; }
     .btn-edit:hover { background:#dce8ff; }
     .btn-sm { padding:0.3rem 0.7rem; font-size:0.8rem; }
-    .search-row { display:flex; gap:0.75rem; margin-bottom:1.5rem; }
+
+    /* .search-row { display:flex; gap:0.75rem; margin-bottom:1.5rem; }
     .search-row input, .search-row select { padding:0.65rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff; }
-    .search-row input { flex:1; }
+    .search-row input { flex:1; } */
+
+    .filters { display:flex; gap:0.75rem; margin-bottom:1rem;  flex-wrap:nowrap; align-items:center; }
+    .filters input { padding:0.6rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff; flex:1; min-width:680px; }
+    .filters select { padding:0.6rem 1rem; border:1px solid #ddd; border-radius:8px; font-size:0.875rem; outline:none; background:#fff;  flex-shrink:0;  width:auto;}
+    .filter-btn { padding:0.5rem 1rem; border:1px solid #ddd; border-radius:20px; font-size:0.8rem; cursor:pointer; background:#fff; transition:all 0.2s; flex-shrink:0;  width: auto}
+    .filter-btn.active { background:#111; color:#fff; border-color:#111; }
+
     .table-card { background:#fff; border-radius:12px; border:1px solid #eee; overflow:hidden; }
     table { width:100%; border-collapse:collapse; }
     th { background:#fafafa; padding:0.85rem 1rem; text-align:left; font-size:0.8rem; font-weight:600; color:#555; border-bottom:1px solid #eee; }
@@ -99,7 +107,7 @@
 </head>
 <body>
 <aside>
-  <div class="sidebar-logo">Shop<span>VLA</span> Admin</div>
+  <div class="sidebar-logo">Shop<span>VN</span> Admin</div>
   <nav>
     <a href="/pages/admin-categories.html" class="menu-item">🗂️ Danh mục</a>
     <a href="/pages/admin-products.html" class="menu-item active">📦 Sản phẩm</a>
@@ -114,21 +122,28 @@
     <h1>Quản lý sản phẩm</h1>
     <button class="btn btn-primary" onclick="openAddModal()">+ Thêm sản phẩm</button>
   </div>
-  <div class="search-row">
-    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()" />
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Tìm theo ID, tên sản phẩm..." oninput="filterProducts()" />
     <select id="categoryFilter" onchange="filterProducts()">
-      <option value="">Tất cả danh mục</option>
+      <option value="">Chọn danh mục</option>
     </select>
+    <button class="filter-btn active" onclick="setStockFilter(null, this)">Tất cả</button>
+    <button class="filter-btn" onclick="setStockFilter('in', this)">Còn hàng</button>
+    <button class="filter-btn" onclick="setStockFilter('out', this)">Hết hàng</button>
+  </div>
+  <div style="margin-bottom:1rem;">
+    <span id="productCount" style="color:#888; font-size:0.875rem;"></span>
   </div>
   <div class="table-card">
     <table>
       <thead>
         <tr>
+          <th>ID</th>
           <th>Sản phẩm</th>
           <th>Giá bán</th>
           <th>Tồn kho</th>
-          <th>Variants</th>
-          <th>Ngày tạo</th>
+          <th>Phân loại</th>
+          <th>Cập nhật lần cuối</th>
           <th>Thao tác</th>
         </tr>
       </thead>
@@ -150,7 +165,7 @@
     <!-- Tab -->
     <div class="detail-tabs">
       <div class="detail-tab active" onclick="switchTab('info', this)">Thông tin cơ bản</div>
-      <div class="detail-tab" onclick="switchTab('variants', this)">Biến thể sản phẩm</div>
+      <div class="detail-tab" onclick="switchTab('variants', this)">Phân loại sản phẩm</div>
     </div>
 
     <!-- Tab 1: Thông tin cơ bản -->
@@ -176,12 +191,12 @@
     <!-- Tab 2: Biến thể -->
     <div class="tab-content" id="tab-variants">
       <p style="font-size:0.875rem; color:#888; margin-bottom:1rem;">
-        Biến thể là các phiên bản khác nhau của sản phẩm (màu sắc, kích thước...). 
-        Mỗi biến thể có giá, tồn kho và SKU riêng.
+        Phân loại là các phiên bản khác nhau của sản phẩm (màu sắc, kích thước...). 
+        Mỗi phân loại có giá, tồn kho và SKU riêng.
       </p>
       <div class="variant-list" id="variantList"></div>
       <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="addVariant()">
-        + Thêm biến thể
+        + Thêm phân loại
       </button>
     </div>
 
@@ -234,7 +249,7 @@
   async function loadProducts() {
     try {
       allProducts = await apiGetProducts();
-      renderTable(allProducts);
+      filterProducts();
     } catch {
       document.getElementById('productTable').innerHTML =
         '<tr><td colspan="7" class="empty">Không thể tải sản phẩm.</td></tr>';
@@ -244,14 +259,44 @@
   // ============================================================
   // RENDER TABLE
   // ============================================================
-  function filterProducts() {
-    const kw = document.getElementById('searchInput').value.toLowerCase();
-    const cat = document.getElementById('categoryFilter').value;
-    renderTable(allProducts.filter(p =>
-      (!kw || p.name.toLowerCase().includes(kw)) &&
-      (!cat || String(p.category?.id) === cat)
-    ));
-  }
+
+  let stockFilter = null; // null | 'in' | 'out'
+
+function setStockFilter(val, btn) {
+  stockFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterProducts();
+}
+
+function filterProducts() {
+  const kw = document.getElementById('searchInput').value.toLowerCase();
+  const cat = document.getElementById('categoryFilter').value;
+
+  let filtered = allProducts.filter(p =>
+     (!kw || 
+      String(p.id).includes(kw) ||          // ✅ tìm theo ID
+      p.name.toLowerCase().includes(kw)      // ✅ tìm theo tên
+    ) &&
+    (!cat || String(p.category?.id) === cat)
+  );
+
+  if (stockFilter === 'in')  filtered = filtered.filter(p => (p.stockQuantity ?? 0) > 0);
+  if (stockFilter === 'out') filtered = filtered.filter(p => (p.stockQuantity ?? 0) <= 0);
+
+  document.getElementById('productCount').textContent = `${filtered.length} sản phẩm`;
+  renderTable(filtered);
+}
+
+
+  // function filterProducts() {
+  //   const kw = document.getElementById('searchInput').value.toLowerCase();
+  //   const cat = document.getElementById('categoryFilter').value;
+  //   renderTable(allProducts.filter(p =>
+  //     (!kw || p.name.toLowerCase().includes(kw)) &&
+  //     (!cat || String(p.category?.id) === cat)
+  //   ));
+  // }
 
 
   function renderTable(products) {
@@ -259,7 +304,7 @@
     document.getElementById('productTable');
   if (!products.length) {
     tbody.innerHTML =
-      '<tr><td colspan="7" class="empty">Không có sản phẩm nào.</td></tr>';
+      '<tr><td colspan="8" class="empty">Không có sản phẩm nào.</td></tr>';
 
     return;
   }
@@ -279,6 +324,8 @@
       return `
 
 <tr>
+
+<td style="font-weight:600;"> ${p.id} </td>
 
 <td>
 
@@ -311,11 +358,11 @@
   </span>
 </td>
 <td>
-  ${variantCount} variants
+  ${variantCount} phân loại
 </td>
-<td>
+<td style="color:#888; font-size:0.8rem;">
 
-  ${formatDate(p.createdAt)}
+  ${formatDate(p.updatedAt)}
 
 </td>
 
@@ -323,7 +370,7 @@
   <div class="actions">
            <button class="btn btn-edit btn-sm" onclick="openEditModal(${p.id})">Sửa</button>
            <button class="btn btn-sm" style="background:#f0f9f4;color:#2e7d32;border:1px solid #c8e6c9;"
-                   onclick="openVariantModal(${p.id})">Variants</button>
+                   onclick="openVariantModal(${p.id})">Phân loại</button>
            <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Xóa</button>
          </div>
       </td>
@@ -413,7 +460,7 @@ function addVariant(v = {}) {
 
   div.innerHTML = `
     <div class="variant-item-header">
-      <div class="variant-label">Biến thể #${idx}</div>
+      <div class="variant-label">Phân loại #${idx}</div>
       <button class="remove-variant-btn"
         onclick="removeVariant(${idx})">Xóa</button>
     </div>
@@ -507,52 +554,6 @@ function removeVariant(idx) {
 }
 
 
-// function addAttr(variantIdx, key = "", value = "") {
-
-//   const attrList =
-//     document.getElementById(`attrs-${variantIdx}`);
-
-//   const id = Date.now();
-
-//   const row = document.createElement("div");
-
-//   row.className = "attr-row";
-
-//   row.id = `attr-${id}`;
-
-//   row.innerHTML = `
-//     <select
-//     onchange="updateSku(${variantIdx})"
-//     style="flex:1;">
-
-//     <option value="">Chọn</option>
-//     <option value="color">Color</option>
-//     <option value="size">Size</option>
-//     <option value="ram">RAM</option>
-//     <option value="storage">Storage</option>
-
-//   </select>
-
-//   <input
-//     type="text"
-//     placeholder="Giá trị"
-//     style="flex:1;"
-//     oninput="updateSku(${variantIdx})" />
-
-//   <button
-//     class="remove-attr-btn"
-//     onclick="
-//       document.getElementById('attr-${id}').remove();
-//       updateSku(${variantIdx});
-//     ">
-//     ✕
-//   </button>
-//   `;
-
-//   attrList.appendChild(row);
-//   updateSku(variantIdx);
-// }
-
 function addAttr(variantIdx, key = "", value = "") {
 
   const attrList =
@@ -574,8 +575,6 @@ function addAttr(variantIdx, key = "", value = "") {
     <option value="">Chọn</option>
     <option value="color">Color</option>
     <option value="size">Size</option>
-    <option value="ram">RAM</option>
-    <option value="storage">Storage</option>
 
   </select>
 
@@ -706,7 +705,7 @@ function getVariants() {
   // ============================================================
   async function deleteProduct(id) {
     const p = allProducts.find(x => x.id === id);
-    if (!confirm(`Xóa sản phẩm "${p?.name}"? Tất cả biến thể cũng sẽ bị xóa.`)) return;
+    if (!confirm(`Xóa sản phẩm "${p?.name}"? Tất cả các phân loại cũng sẽ bị xóa.`)) return;
     try {
       await apiDeleteProduct(id);
       showToast('✓ Đã xóa sản phẩm');
@@ -726,7 +725,7 @@ async function openVariantModal(id) {
 
   pName.value = p.name;
   pDesc.value = p.description;
-  pCategory.value = p.categoryId || "";
+  pCategory.value = p.category.id || "";
   pImage.value = p.imageUrl || "";
 
   variantList.innerHTML = "";

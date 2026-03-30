@@ -1,6 +1,7 @@
 package com.Payment.Shop.dto.response;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -41,9 +42,9 @@ public class BaseOrderResponse {
 
     protected BigDecimal shippingFee;  // ← thêm
     
-    protected LocalDateTime createdAt; // ← thêm
+    protected Instant createdAt; // ← thêm
 
-    protected LocalDateTime updatedAt; // ← thêm (optional)
+    protected Instant updatedAt; // ← thêm (optional)
 
     protected List<OrderItemResponse> orderItems; // ← thêm — quan trọng nhất
 }

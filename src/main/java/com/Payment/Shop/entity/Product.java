@@ -41,5 +41,6 @@ public class Product {
     @PreUpdate
     public void preUpdate() {
         updatedAt = Instant.now();
+        System.out.println(">>> @PreUpdate fired, updatedAt = " + updatedAt); // thêm dòng này
     }
 }

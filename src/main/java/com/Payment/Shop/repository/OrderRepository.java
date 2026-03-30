@@ -30,8 +30,12 @@ List<Order> findByUserIdWithItems(@Param("userId") Long userId);
     List<Order> findByOrderStatus(OrderStatus status);
 
     // Lấy tất cả có orderItems
-    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderItems ORDER BY o.createdAt DESC")
-    List<Order> findAllWithItems();
-
+    // OrderRepository.java — thêm query mới
+    @Query("SELECT DISTINCT o FROM Order o " +
+        "LEFT JOIN FETCH o.orderItems i " +
+        "LEFT JOIN FETCH i.productVariant v " +
+        "LEFT JOIN FETCH v.product " +
+        "ORDER BY o.createdAt DESC")
+    List<Order> findAllWithItemsAndProduct();
     
 }

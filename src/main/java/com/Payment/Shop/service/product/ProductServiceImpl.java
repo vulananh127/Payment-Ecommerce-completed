@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -143,7 +144,7 @@ public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) 
     product.setName(request.getName());
     product.setDescription(request.getDescription());
     product.setImageUrl(request.getImageUrl());
-
+    product.setUpdatedAt(Instant.now()); // ✅ set thủ công để chắc chắn
 
     if (request.getCategoryId() != null) {
         Category category = categoryRepository.findById(request.getCategoryId())
@@ -223,7 +224,8 @@ public BaseProductResponse updateProduct(Long id, UpdateProductRequest request) 
         res.setName(product.getName());
         res.setDescription(product.getDescription());
         res.setImageUrl(product.getImageUrl());
-        res.setCreatedAt(product.getCreatedAt());
+        // res.setCreatedAt(product.getCreatedAt());
+        res.setUpdatedAt(product.getUpdatedAt());
         // ===== category =====
         if (product.getCategory() != null) {
             CategoryResponse c = new CategoryResponse();

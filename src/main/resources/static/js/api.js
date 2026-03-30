@@ -69,6 +69,18 @@ function formatDate(str) {
   });
 }
 
+function formatDates(str) {
+  if (!str) return '—';
+  // Thêm Z nếu chưa có để đảm bảo parse đúng
+  const normalized = str.includes('Z') || str.includes('+') ? str : str + 'Z';
+  const d = new Date(normalized);
+  if (isNaN(d)) return str; // fallback hiện raw string nếu vẫn lỗi
+  return d.toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
 // ============================================================
 // TOAST
 // ============================================================

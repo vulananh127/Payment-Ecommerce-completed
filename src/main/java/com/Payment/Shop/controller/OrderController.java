@@ -3,7 +3,7 @@ package com.Payment.Shop.controller;
 import com.Payment.Shop.dto.ResultObject;
 import com.Payment.Shop.dto.request.CreateOrderRequest;
 import com.Payment.Shop.dto.request.UpdateOrderStatusRequest;
-import com.Payment.Shop.dto.response.AdminOrderResponse;
+
 import com.Payment.Shop.dto.response.BaseOrderResponse;
 import com.Payment.Shop.service.order.IOrderService;
 import jakarta.validation.Valid;
@@ -63,8 +63,8 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('SHOP')")
     public ResponseEntity<ResultObject> getAllOrders(
             @RequestParam(required = false) String status) {
-        List<AdminOrderResponse> orders = orderService.getAllOrders(status);
-        ResultObject<List<AdminOrderResponse>> result = new ResultObject<>(
+        List<BaseOrderResponse> orders = orderService.getAllOrders(status);
+        ResultObject<List<BaseOrderResponse>> result = new ResultObject<>(
                 true, "Get all orders successfully", HttpStatus.OK, orders);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
@@ -75,8 +75,8 @@ public class OrderController {
     public ResponseEntity<ResultObject> updateOrderStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
-        AdminOrderResponse order = orderService.updateOrderStatus(id, request.getStatus());
-        ResultObject<AdminOrderResponse> result = new ResultObject<>(
+        BaseOrderResponse order = orderService.updateOrderStatus(id, request.getStatus());
+        ResultObject<BaseOrderResponse> result = new ResultObject<>(
                 true, "Update order status successfully", HttpStatus.OK, order);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }

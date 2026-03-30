@@ -2,7 +2,7 @@ package com.Payment.Shop.service.order;
 
 import com.Payment.Shop.constant.PaymentMethod;
 import com.Payment.Shop.dto.request.CreateOrderRequest;
-import com.Payment.Shop.dto.response.AdminOrderResponse;
+
 import com.Payment.Shop.dto.response.BaseOrderResponse;
 import com.Payment.Shop.entity.Order;
 
@@ -21,8 +21,8 @@ public interface IOrderService {
     BaseOrderResponse cancelOrder(Long id);
 
     // New - Admin
-    List<AdminOrderResponse> getAllOrders(String status);
-    AdminOrderResponse updateOrderStatus(Long id, String status);
+    List<BaseOrderResponse> getAllOrders(String status);
+    BaseOrderResponse updateOrderStatus(Long id, String status);
 
     // New - Payment
     void markOrderAsFailed(Long orderId, PaymentMethod paymentMethod);

@@ -49,7 +49,7 @@
 </head>
 <body>
 <aside>
-  <div class="sidebar-logo">Shop<span>VLA</span> Admin</div>
+  <div class="sidebar-logo">Shop<span>VN</span> Admin</div>
   <nav>
     <a href="/pages/admin-categories.html" class="menu-item active">🗂️ Danh mục</a>
     <a href="/pages/admin-products.html" class="menu-item">📦 Sản phẩm</a>
@@ -69,11 +69,15 @@
     <input type="text" id="searchInput" placeholder="Tìm kiếm danh mục..." oninput="filterCategories()" />
   </div>
 
+  <div style="margin-bottom:1rem;">
+      <span id="categoryCount" style="color:#888; font-size:0.875rem;margin-left:auto;"></span>
+  </div>
+
   <div class="table-card">
     <table>
       <thead>
         <tr>
-          <th>#ID</th>
+          <th>ID</th>
           <th>Tên danh mục</th>
           <th>Ngày tạo</th>
           <th>Số sản phẩm</th>
@@ -122,13 +126,15 @@
 
   function renderTable(categories) {
     const tbody = document.getElementById('categoryTable');
+      document.getElementById('categoryCount').textContent =
+    `${categories.length} danh mục`;
     if (!categories.length) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty">Không có danh mục nào.</td></tr>';
       return;
     }
     tbody.innerHTML = categories.map(c => `
       <tr>
-        <td style="color:#888;">#${c.id}</td>
+        <td style="font-weight:600;">#${c.id}</td>
         <td style="font-weight:500;">${c.categoryName}</td>
         <td style="color:#888; font-size:0.8rem;">${formatDate(c.createdAt)}</td>
         <td>${c.productCount || 0} sản phẩm</td>

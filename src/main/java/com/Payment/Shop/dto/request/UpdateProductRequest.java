@@ -23,7 +23,5 @@ public class UpdateProductRequest {
 
     private String imageUrl;
 
-    // Optional - nếu null thì giữ nguyên variants cũ
-    // nếu có thì xóa cũ và thêm mới
     private List<CreateProductVariantRequest> variants;
 }

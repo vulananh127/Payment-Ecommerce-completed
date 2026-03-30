@@ -67,8 +67,8 @@ public class SecurityConfig {
 
                 "/api/v1/users/signup", // Đăng ký
                 // "/api/v1/auth/login", // Đăng nhập
-                "/api/v1/categories",
-                // "/api/v1/admin/categories", // các trang admin
+                "/api/v1/**",
+                "/api/v1/admin/**", // các trang admin
                 "/favicon.ico",
                 "/",
                 "/index.html",

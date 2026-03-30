@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đơn hàng của tôi - ShopVLA</title>
+  <title>Đơn hàng của tôi - ShopVN</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; color:#111; }
@@ -77,10 +77,10 @@
     /* Payment badges */
     .pay-badge {
       font-size:0.72rem; padding:0.2rem 0.6rem;
-      border-radius:10px; white-space:nowrap;
+      border-radius:20px;font-weight:600; white-space:nowrap;
     }
     .pay-UNPAID              { background:#f5f5f5; color:#888; }
-    .pay-PAYMENT_PROCESSING  { background:#fff8e1; color:#f57f17; }
+    .pay-UNPAID  { background:#fff8e1; color:#f57f17; }
     .pay-PAYMENT_COMPLETED   { background:#e8f5e9; color:#2e7d32; }
     .pay-PAYMENT_FAILED      { background:#fff3f3; color:#c62828; }
 
@@ -203,7 +203,7 @@
 <body>
 
 <nav>
-  <a href="/index.html" class="logo">Shop<span>VLA</span></a>
+  <a href="/index.html" class="logo">Shop<span>VN</span></a>
   <span id="userName" style="font-size:0.875rem; color:#555;"></span>
   <a href="/index.html" class="nav-btn">← Tiếp tục mua sắm</a>
 </nav>
@@ -243,15 +243,15 @@
     CANCELED:    'Đã hủy'
   };
   const PAY_LABEL = {
-    UNPAID:              'Chưa thanh toán (COD)',
+    UNPAID:              'Chưa thanh toán',
     PAYMENT_PROCESSING:  'Chờ thanh toán',
     PAYMENT_COMPLETED:   'Đã thanh toán',
     PAYMENT_FAILED:      'Thanh toán lỗi'
   };
   const PAY_METHOD_LABEL = {
     COD:    'Tiền mặt (COD)',
-    VNPAY:  'VNPay',
-    STRIPE: 'Stripe'
+    VNPAY:  'Ví VNPay',
+    MOMO: 'Ví MOMO'
   };
 
   let allOrders    = [];
@@ -362,7 +362,7 @@
               ${STATUS_LABEL[o.orderStatus] || o.orderStatus}
             </span>
             <span class="pay-badge pay-${o.paymentStatus}">
-              ${PAY_LABEL[o.paymentStatus] || o.paymentStatus || ''}
+            ${PAY_LABEL[o.paymentStatus] || o.paymentStatus || '—'} (${o.paymentMethod})
             </span>
           </div>
         </div>
